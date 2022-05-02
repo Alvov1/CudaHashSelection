@@ -42,7 +42,7 @@ int main() {
 
     Timer::out << "Loaded hash to the device. Starting researching process." << std::endl;
 
-    Process<<<16, 16>>>(deviceHash, 2997, 12, result);
+    Process<<<16, 16>>>(deviceHash, 10000, 40, result);
     cudaDeviceSynchronize();
 
     Timer::out << "Process ended." << std::endl;
