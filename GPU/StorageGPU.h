@@ -93,7 +93,7 @@ public:
             throw std::runtime_error("StorageGPU::process: CudaMemcpy failed for device place for result.");
 
         execution<<<16, 16>>>(deviceArray,
-                              deviceArraySize, 12, devicePassword, devicePlaceForResult);
+                              deviceArraySize, 40, devicePassword, devicePlaceForResult);
 
         cudaError_t error = cudaDeviceSynchronize();
         if(error != cudaSuccess) {
