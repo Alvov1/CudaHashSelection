@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <thread>
+
 #include "DeviceHash.h"
 
 DEVICE size_t devStrlen(const char *str) {
@@ -92,8 +93,10 @@ public:
         if(cudaSuccess != cudaMemcpy(devicePlaceForResult, &copy, sizeof(int), cudaMemcpyHostToDevice))
             throw std::runtime_error("StorageGPU::process: CudaMemcpy failed for device place for result.");
 
-        execution<<<16, 16>>>(deviceArray,
-                              deviceArraySize, 40, devicePassword, devicePlaceForResult);
+        const auto dimension = countDimension(Dictionary::size());
+        const auto wordsPerThread = (Dictionary::size() + dimension * dimension - 1) / (dimension * dimension);
+        execution<<<dimension, dimension>>>(deviceArray,
+                              deviceArraySize, wordsPerThread, devicePassword, devicePlaceForResult);
 
         cudaError_t error = cudaDeviceSynchronize();
         if(error != cudaSuccess) {
@@ -106,6 +109,15 @@ public:
         if(cudaSuccess != cudaFree(devicePlaceForResult))
             throw std::runtime_error("StorageGPU::process: CudaFree failed for device place for result.");
         return copy;
+    }
+
+    static unsigned countDimension(size_t dictionarySize) {
+        auto base = static_cast<unsigned>(std::cbrt(dictionarySize));
+
+        for(unsigned power = 2; ; ++power) {
+            const auto value = static_cast<unsigned>(pow(2, power + 1));
+            if(value > base) return static_cast<unsigned>(value / 2);
+        }
     }
 };
 
