@@ -50,7 +50,7 @@ public:
         return data_[0];
     }
     DEVICE inline const T* get() const { return data_; }
-    DEVICE inline bool compare(const T* cmp) const {
+    DEVICE inline bool equals(const T* cmp) const {
         return (devStrcmp(data_, cmp) == 0);
     }
 };

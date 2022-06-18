@@ -15,21 +15,18 @@ __global__ void execution(const char* const* deviceArray, const size_t* arraySiz
                           unsigned wordsPerThread, const char* password, int* result) {
     const auto threadNumber = blockIdx.x * blockDim.x + threadIdx.x;
     auto arrayPosition = threadNumber * wordsPerThread;
+    if(arrayPosition >= *arraySize) return;
     const auto wordsToCheck = (arrayPosition + wordsPerThread < *arraySize) ?
             wordsPerThread : *arraySize - arrayPosition;
 
     for(auto i = 0; i < wordsToCheck; ++arrayPosition, ++i) {
         if(*result != -1) break;
-        const char* currentWord = deviceArray[arrayPosition];
 
+        const char* currentWord = deviceArray[arrayPosition];
         DeviceSHA256 sha(currentWord, devStrlen(currentWord));
         const auto hash = sha.count();
-        if(hash.compare(password)) {
-            printf("Found at %d\n", arrayPosition);
+        if(hash.equals(password))
             auto old = atomicExch(result, static_cast<int>(arrayPosition));
-            printf("Old: %d\n", old);
-            printf("Value now: %d\n", *result);
-        }
     }
 }
 
@@ -45,48 +42,69 @@ public:
     StorageGPU(const char* const* const hostArray_, size_t size_, const std::string& pass)
     : hostArraySize(size_), hostArray(static_cast<char**>(malloc(size_ * sizeof(char*)))) {
         /* -------------- Copy an array of words to the device. -------------- */
-        cudaMalloc(&deviceArray, hostArraySize * sizeof(char*)); /* Device array of pointers. */
+        if(cudaSuccess != cudaMalloc(&deviceArray, hostArraySize * sizeof(char*)))
+            throw std::runtime_error("StorageGPU: CudaMalloc failed for device array."); /* Device array of pointers. */
+
         for(auto i = 0; i < hostArraySize; ++i) {
             size_t elemSize = strlen(hostArray_[i]) + 1;
-            cudaMalloc(&hostArray[i], elemSize * sizeof(char));
-                /* Allocate space for the device object, and store it on host. */
-            cudaMemcpy(hostArray[i], hostArray_[i], elemSize,
-                       cudaMemcpyHostToDevice); /* Copy object to device. */
+            if(cudaSuccess != cudaMalloc(&hostArray[i], elemSize * sizeof(char)))
+                throw std::runtime_error("StorageGPU: CudaMalloc failed for host array.");
+
+            /* Allocate space for the device object, and store it on host. */
+            if(cudaSuccess != cudaMemcpy(hostArray[i], hostArray_[i], elemSize, cudaMemcpyHostToDevice))
+                throw std::runtime_error("StorageGPU: CudaMemcpy failed for host array."); /* Copy object to device. */
         }
-        cudaMemcpy(deviceArray, hostArray, hostArraySize * sizeof(char*),
-                   cudaMemcpyHostToDevice); /* Copy array of host pointers to get an array of device pointers. */
+        if(cudaSuccess != cudaMemcpy(deviceArray, hostArray,
+        hostArraySize * sizeof(char*), cudaMemcpyHostToDevice))
+            throw std::runtime_error("StorageGPU: CudaMemcpy failed for device array."); /* Copy array of host pointers to get an array of device pointers. */
 
         /* ------------- Copy the size of an array to the device. ------------ */
-        cudaMalloc(&deviceArraySize, sizeof(size_t));
-        cudaMemcpy(deviceArraySize, &hostArraySize, sizeof(size_t), cudaMemcpyHostToDevice);
+        if(cudaSuccess != cudaMalloc(&deviceArraySize, sizeof(size_t)))
+            throw std::runtime_error("StorageGPU: CudaMalloc failed for device array size.");
+        if(cudaSuccess != cudaMemcpy(deviceArraySize, &hostArraySize, sizeof(size_t), cudaMemcpyHostToDevice))
+            throw std::runtime_error("StorageGPU: CudaMemcpy failed for device array size.");
 
         /* ----------------- Copy the password to the device. ---------------- */
-        cudaMalloc(&devicePassword, sizeof(char) * (pass.size() + 1));
-        cudaMemcpy(devicePassword, pass.c_str(), sizeof(char) * (pass.size() + 1), cudaMemcpyHostToDevice);
+        if(cudaSuccess != cudaMalloc(&devicePassword, sizeof(char) * (pass.size() + 1)))
+            throw std::runtime_error("StorageGPU: CudaMalloc failed for device password.");
+        if(cudaMemcpy(devicePassword, pass.c_str(), sizeof(char) * (pass.size() + 1), cudaMemcpyHostToDevice))
+            throw std::runtime_error("StorageGPU: CudaMemcpy failed for device password.");
     }
     ~StorageGPU() {
         for(auto i = 0; i < hostArraySize; ++i)
-            cudaFree(hostArray[i]);
-        cudaFree(deviceArray);
+            if(cudaSuccess != cudaFree(hostArray[i]))
+                std::cerr << "~StorageGPU: CudaFree failed for host array." << std::endl;
+        if(cudaSuccess != cudaFree(deviceArray))
+            std::cerr << "~StorageGPU: CudaFree failed for device array." << std::endl;
         free(hostArray);
 
-        cudaFree(deviceArraySize);
-        cudaFree(devicePassword);
+        if(cudaSuccess != cudaFree(deviceArraySize))
+            std::cerr << "~StorageGPU: CudaFree failed for device array size." << std::endl;
+        if(cudaSuccess != cudaFree(devicePassword))
+            std::cerr << "~StorageGPU: CudaFree failed for device password." << std::endl;
     }
-
 
     int process() {
         int copy = -1;
         int* devicePlaceForResult = nullptr;
-        cudaMalloc(&devicePlaceForResult, sizeof(int));
-        cudaMemcpy(devicePlaceForResult, &copy, sizeof(int), cudaMemcpyHostToDevice);
+        if(cudaSuccess != cudaMalloc(&devicePlaceForResult, sizeof(int)))
+            throw std::runtime_error("StorageGPU::process: CudaMalloc failed for device place for result.");
+        if(cudaSuccess != cudaMemcpy(devicePlaceForResult, &copy, sizeof(int), cudaMemcpyHostToDevice))
+            throw std::runtime_error("StorageGPU::process: CudaMemcpy failed for device place for result.");
 
         execution<<<16, 16>>>(deviceArray,
                               deviceArraySize, 12, devicePassword, devicePlaceForResult);
 
-        cudaDeviceSynchronize();
-        cudaMemcpy(&copy, devicePlaceForResult, sizeof(int), cudaMemcpyDeviceToHost);
-        cudaFree(devicePlaceForResult);
+        cudaError_t error = cudaDeviceSynchronize();
+        if(error != cudaSuccess) {
+            std::cerr << cudaGetErrorString(error) << std::endl;
+            throw std::runtime_error("StorageGPU::process: CudaDeviceSynchronize failed.");
+        }
+
+        if(cudaSuccess != cudaMemcpy(&copy, devicePlaceForResult, sizeof(int), cudaMemcpyDeviceToHost))
+            throw std::runtime_error("StorageGPU::process: CudaMemcpy failed for device place for result back.");
+        if(cudaSuccess != cudaFree(devicePlaceForResult))
+            throw std::runtime_error("StorageGPU::process: CudaFree failed for device place for result.");
         return copy;
     }
 };

@@ -31,13 +31,6 @@ DEVICE DeviceSHA256::DigestType DeviceSHA256::finalDigest() {
     SHA2_UNPACK32(len_b, block_ + pm_len - 4);
     transform_(block_, block_nb);
 
-    // Turn into byte array. Might be useful later.
-    // unsigned char digest[DeviceSHA256::DigestSize];
-    // memset(digest,0,DeviceSHA256::DigestSize);
-    // for (size_t i = 0 ; i < 8; i++) {
-    //     SHA2_UNPACK32(digest_[i], &digest[i << 2]);
-    // }
-
     return {digest_, 8};
 }
 
