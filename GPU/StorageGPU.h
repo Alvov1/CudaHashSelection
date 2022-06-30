@@ -55,9 +55,9 @@ public:
             if(cudaSuccess != cudaMemcpy(hostArray[i], hostArray_[i], elemSize, cudaMemcpyHostToDevice))
                 throw std::runtime_error("StorageGPU: CudaMemcpy failed for host array."); /* Copy object to device. */
         }
-        if(cudaSuccess != cudaMemcpy(deviceArray, hostArray,
-        hostArraySize * sizeof(char*), cudaMemcpyHostToDevice))
-            throw std::runtime_error("StorageGPU: CudaMemcpy failed for device array."); /* Copy array of host pointers to get an array of device pointers. */
+        /* Copy array of host pointers to get an array of device pointers. */
+        if(cudaSuccess != cudaMemcpy(deviceArray, hostArray,hostArraySize * sizeof(char*), cudaMemcpyHostToDevice))
+            throw std::runtime_error("StorageGPU: CudaMemcpy failed for device array.");
 
         /* ------------- Copy the size of an array to the device. ------------ */
         if(cudaSuccess != cudaMalloc(&deviceArraySize, sizeof(size_t)))
@@ -98,12 +98,8 @@ public:
         execution<<<dimension, dimension>>>(deviceArray,
                               deviceArraySize, wordsPerThread, devicePassword, devicePlaceForResult);
 
-        cudaError_t error = cudaDeviceSynchronize();
-        if(error != cudaSuccess) {
-            std::cerr << cudaGetErrorString(error) << std::endl;
+        if(cudaSuccess != cudaDeviceSynchronize())
             throw std::runtime_error("StorageGPU::process: CudaDeviceSynchronize failed.");
-        }
-
         if(cudaSuccess != cudaMemcpy(&copy, devicePlaceForResult, sizeof(int), cudaMemcpyDeviceToHost))
             throw std::runtime_error("StorageGPU::process: CudaMemcpy failed for device place for result back.");
         if(cudaSuccess != cudaFree(devicePlaceForResult))

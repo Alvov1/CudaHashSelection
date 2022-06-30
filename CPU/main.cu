@@ -4,11 +4,11 @@
 #include "HostHash.h"
 #include "Dictionary.h"
 
-void run(const std::string& hash) {
+void process(const std::string& hash) {
     for(auto i = 0; i < Dictionary::size(); ++i) {
         HostSHA256 sha(Dictionary::data()[i]);
         if(sha.out() == hash) {
-            Timer::out << "Found coincidence at " << i << "." << std::endl;
+            Timer::out << "Found coincidence at " << i << ". Password is " << Dictionary::instance()[i] << std::endl;
             break;
         }
     }
@@ -19,6 +19,6 @@ int main() {
     const auto hash = HostSHA256(pass).out();
     Timer::out << "Searching for password with hash '" << hash << "'." << std::endl;
 
-    run(hash);
+    process(hash);
     return 0;
 }
