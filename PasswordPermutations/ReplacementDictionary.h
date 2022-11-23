@@ -2,60 +2,75 @@
 #define HASHSELECTION_REPLACEMENTDICTIONARY_H
 
 #include <cstdio>
+#include <functional>
+
+#include "Word.h"
+#include "WordBuffer.h"
 
 class ReplacementDictionary final {
-    inline static constexpr wchar_t dictionary[][7] = {
-            {L'∆', L'4', L'@', L'Д', L'а'},
-            {L'8', L'6', L'ß', L'в', L'ь'},
-            {L'<', L'{', L'[', L'(', L'¢', L'с', L'©'},
-            {},
-            {L'3', L'£', L'₤', L'€', L'е'},
-            {L'7', L'ƒ'},
-            {L'9', L'[', L'-', L'6'},
-            {L'#', L'4', L'н'},
-            {L'1', L'|', L'!', L'9'},
-            {L'√', L'9'},
-            {},
-            {L'|', L'1'},
-            {L'м'},
-            {L'И', L'и', L'п'},
-            {L'0', L'Ø', L'Θ', L'о', L'ө'},
-            {L'р'},
-            {L'9', L'0'},
-            {L'Я', L'®'},
-            {L'5', L'$'},
-            {L'7', L'+', L'т'},
-            {},
-            {},
-            {L'Ш'},
-            {L'×', L'%', L'*', L'Ж'},
-            {L'¥', L'Ч', L'ү', L'у'},
-            {L'5'},
+    inline static constexpr Word dictionary[] = {
+            { L"4" }, //{ L"∆4@ДАда" },	/* A */
+            { L"b" }, //{ L"86ßВвЬь" },		/* B */
+            { L"<{[(¢Сс©" },	/* C */
+            { nullptr },		/* D */
+            { L"3£₤€Ее" },		/* E */
+            { L"7ƒ" },		    /* F */
+            { L"9[6" },		/* G */
+            { L"#4Нн" },		/* H */
+            { L"1|!" },		/* I */
+            { L"√" },		    /* J */
+            { nullptr },		/* K */
+            { L"|1" },		    /* L */
+            { L"Мм" },		    /* M */
+            { L"Ии" },		    /* N */
+            { L"0ØΘОоө" },		/* O */
+            { L"Рр" },		    /* P */
+            { L"90" },		    /* Q */
+            { L"Яя®" },		/* R */
+            { L"5$" },		    /* S */
+            { L"7+Тт" },		/* T */
+            { nullptr },		/* U */
+            { nullptr },		/* V */
+            { L"ШшЩщ" },		/* W */
+            { L"×%*Жж" },		/* X */
+            { L"¥ЧчүУу" },		/* Y */
+            { L"5" },		    /* Z */
     };
+    inline static constexpr Word empty = Word(nullptr);
 
-    static size_t getLength(wchar_t key) {
-        if(key < L'A' || key > L'Z') return 0;
+    static bool nextPermutation(const Word& candidate, const Word& pattern,
+        WordBuffer& buffer, const std::function<bool(const WordBuffer&, const Word&)>& func) {
+        if(buffer.filled() == candidate.size()) return func(buffer, pattern);
 
-        size_t length = 0;
-        for(; dictionary[key - L'A'][length] != 0; ++length);
+        const unsigned position = buffer.filled();
+        buffer.push(candidate[position]);
+        if(nextPermutation(candidate, pattern, buffer, func)) return true;
+        buffer.pop();
 
-        return length;
+        const Word& variants = ReplacementDictionary::getVariants(candidate[position]);
+        for(unsigned i = 0; i < variants.size(); ++i) {
+            buffer.push(variants[i]);
+            if(nextPermutation(candidate, pattern, buffer, func)) return true;
+            buffer.pop();
+        }
+        return false;
     }
 
 public:
-    static auto getVariants(wchar_t key) {
-        struct LimitedPointer {
-            const wchar_t* data = nullptr;
-            size_t length = 0;
-        };
-
+    static constexpr const Word& getVariants(wchar_t key) {
         if(key >= L'A' && key <= L'Z')
-            return LimitedPointer {
-            .data = reinterpret_cast<const wchar_t*>(&dictionary[key - L'A']),
-            .length = getLength(key)
-        };
+            return dictionary[key - L'A'];
+        if(key >= L'a' && key <= L'z')
+            return dictionary[key - L'a'];
+        return empty;
+    }
 
-        return LimitedPointer { nullptr, 0 };
+    static Word enumerate(const Word& candidate, const Word& pattern,
+        const std::function<bool(const WordBuffer&, const Word&)>& func) {
+        WordBuffer buffer(candidate.size());
+        if(nextPermutation(candidate, pattern, buffer, func))
+            return buffer.toWord();
+        return Word::createEmpty();
     }
 };
 
