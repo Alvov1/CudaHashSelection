@@ -29,10 +29,7 @@ public:
 
     size_t size() const { return length; }
     size_t filled() const { return count; }
-
-    Word toWord() const {
-        return { buffer };
-    }
+    Word toWord() const { return { buffer }; }
 
     friend std::wostream& operator<<(std::wostream& stream, const WordBuffer& data) {
         return stream << data.buffer;

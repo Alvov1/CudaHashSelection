@@ -2,17 +2,27 @@
 #define HASHSELECTION_HOSTHASH_H
 
 #include <iostream>
-#include <array>
 #include <sstream>
 #include <iomanip>
+#include <array>
 
-class HostSHA256 {
-    static constexpr size_t BlockSize = (512 / 8);
-    static constexpr size_t DigestSize = ( 256 / 8);
+#include "Word.h"
+
+class HostSHA256 final {
     using DigestType = std::array<uint32_t, 8>;
+    static constexpr size_t BlockSize = (512 / 8);
+    static constexpr size_t DigestSize = (256 / 8);
 
-    void update_(unsigned char const *message, size_t len);
-    void transform_(unsigned char const *message, unsigned int block_nb);
+    unsigned int len{};
+    unsigned int totalLen{};
+    const static uint32_t sha256_k[];
+    unsigned char block[2 * BlockSize]{};
+    DigestType currentDigest{ 0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19 };
+    std::wstring result;
+
+    void update(unsigned char const *message, size_t len);
+    void transform(unsigned char const *message, unsigned int block_nb);
+    void finalDigest();
 
     static inline uint32_t SHA2_SHFR(uint32_t x, uint32_t n) { return x >> n; }
     static inline uint32_t SHA2_ROTR(uint32_t x, uint32_t n) { return ((x >> n) | (x << ((sizeof(x) << 3) - n))); }
@@ -32,29 +42,19 @@ class HostSHA256 {
         *((str) + 1) = (uint8_t) ((x) >> 16); *((str) + 0) = (uint8_t) ((x) >> 24);
     }
 
-    const static uint32_t sha256_k[];
-    unsigned int tot_len_{};
-    unsigned int len_{};
-    unsigned char block_[2 * BlockSize]{};
-    DigestType digest_{
-            0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
-            0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19};
-
-    DigestType finalDigest();
 public:
-    inline HostSHA256(const char* value, size_t size) {
-        auto const *in_uchar = reinterpret_cast<unsigned char const *>(value);
-        update_(in_uchar, size);
-    }
-    explicit inline HostSHA256(const std::string& value) : HostSHA256(value.c_str(), value.size()) {}
-    HostSHA256(HostSHA256 const &) = delete;
-    HostSHA256 &operator=(HostSHA256 const &) = delete;
+    HostSHA256(const wchar_t* value, size_t size);
+    HostSHA256(const Word& value) : HostSHA256(value.c_str(), value.size()) {}
 
-    std::string out();
+    bool operator==(const Word& compareTo) { return compareTo == result.c_str(); }
+    Word toWord() const { return { result.c_str() }; }
+
+    friend std::wostream& operator<<(std::wostream& stream, const HostSHA256& value) { return stream << value.result; }
+
+    HostSHA256(const HostSHA256& copy) = delete;
+    HostSHA256& operator=(const HostSHA256& assign) = delete;
+    HostSHA256(HostSHA256&& move) = delete;
+    HostSHA256& operator=(HostSHA256&& moveAssign) = delete;
 };
-
-inline std::ostream& operator<<(std::ostream& os, HostSHA256& value) {
-    os << value.out(); return os;
-}
 
 #endif //HASHSELECTION_HOSTHASH_H

@@ -1,6 +1,6 @@
 #include "HostHash.h"
 
-const unsigned int HostSHA256::sha256_k[64] = {
+constexpr unsigned int HostSHA256::sha256_k[64] = {
         0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
         0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
         0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
@@ -19,62 +19,49 @@ const unsigned int HostSHA256::sha256_k[64] = {
         0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
 };
 
-std::string HostSHA256::out() {
-    const auto& digest = finalDigest();
-    std::ostringstream result;
-    for (size_t i = 0; i < digest.size(); ++i) {
-        result << std::hex << std::setfill('0') << std::setw(8);
-        result << static_cast<int>( digest[i] );
-    }
-    return result.str();
-}
-
-HostSHA256::DigestType HostSHA256::finalDigest() {
+void HostSHA256::finalDigest() {
     unsigned int block_nb;
     unsigned int pm_len;
     unsigned int len_b;
-    block_nb = (1 + ((HostSHA256::BlockSize - 9) < (len_ % HostSHA256::BlockSize)));
-    len_b = (tot_len_ + len_) << 3;
+    block_nb = (1 + ((HostSHA256::BlockSize - 9) < (len % HostSHA256::BlockSize)));
+    len_b = (totalLen + len) << 3;
     pm_len = block_nb << 6;
-    memset(block_ + len_, 0, pm_len - len_);
-    block_[len_] = 0x80;
-    SHA2_UNPACK32(len_b, block_ + pm_len - 4);
-    transform_(block_, block_nb);
+    memset(block + len, 0, pm_len - len);
+    block[len] = 0x80;
+    SHA2_UNPACK32(len_b, block + pm_len - 4);
+    transform(block, block_nb);
 
     // Turn into byte array. Might be useful later.
     // unsigned char digest[HostSHA256::DigestSize];
     // memset(digest,0,HostSHA256::DigestSize);
     // for (size_t i = 0 ; i < 8; i++) {
-    //     SHA2_UNPACK32(digest_[i], &digest[i << 2]);
+    //     SHA2_UNPACK32(currentDigest[i], &digest[i << 2]);
     // }
-
-    auto const result = digest_;
-    return result;
 }
 
-void HostSHA256::update_(unsigned char const *message, size_t len) {
+void HostSHA256::update(unsigned char const *message, size_t len) {
     unsigned int block_nb;
     unsigned int new_len, rem_len, tmp_len;
     const unsigned char *shifted_message;
-    tmp_len = HostSHA256::BlockSize - len_;
+    tmp_len = HostSHA256::BlockSize - len;
     rem_len = len < tmp_len ? len : tmp_len;
-    memcpy(&block_[len_], message, rem_len);
-    if (len_ + len < HostSHA256::BlockSize) {
-        len_ += len;
+    memcpy(&block[len], message, rem_len);
+    if (len + len < HostSHA256::BlockSize) {
+        len += len;
         return;
     }
     new_len = len - rem_len;
     block_nb = new_len / HostSHA256::BlockSize;
     shifted_message = message + rem_len;
-    transform_(block_, 1);
-    transform_(shifted_message, block_nb);
+    transform(block, 1);
+    transform(shifted_message, block_nb);
     rem_len = new_len % HostSHA256::BlockSize;
-    memcpy(block_, &shifted_message[block_nb << 6], rem_len);
-    len_ = rem_len;
-    tot_len_ += (block_nb + 1) << 6;
+    memcpy(block, &shifted_message[block_nb << 6], rem_len);
+    len = rem_len;
+    totalLen += (block_nb + 1) << 6;
 }
 
-void HostSHA256::transform_(unsigned char const *message, unsigned int block_nb) {
+void HostSHA256::transform(unsigned char const *message, unsigned int block_nb) {
     uint32_t w[64];
     uint32_t wv[8];
     uint32_t t1, t2;
@@ -90,7 +77,7 @@ void HostSHA256::transform_(unsigned char const *message, unsigned int block_nb)
             w[j] = SHA256_F4(w[j - 2]) + w[j - 7] + SHA256_F3(w[j - 15]) + w[j - 16];
         }
         for (j = 0; j < 8; j++) {
-            wv[j] = digest_[j];
+            wv[j] = currentDigest[j];
         }
         for (j = 0; j < 64; j++) {
             t1 = wv[7] + SHA256_F2(wv[4]) + SHA2_CH(wv[4], wv[5], wv[6])
@@ -106,8 +93,21 @@ void HostSHA256::transform_(unsigned char const *message, unsigned int block_nb)
             wv[0] = t1 + t2;
         }
         for (j = 0; j < 8; j++) {
-            digest_[j] += wv[j];
+            currentDigest[j] += wv[j];
         }
     }
+}
+
+HostSHA256::HostSHA256(const wchar_t *value, size_t size) {
+    auto const* in_uchar = reinterpret_cast<unsigned char const*>(value);
+    const size_t oneByteCodingSize = size * (sizeof(wchar_t) / sizeof(char));
+    update(in_uchar, oneByteCodingSize);
+    finalDigest();
+
+    std::wostringstream stream;
+    for (unsigned int i : currentDigest)
+        stream << std::hex << std::setfill(L'0') << std::setw(8) << static_cast<int>( i );
+
+    result = stream.str();
 }
 

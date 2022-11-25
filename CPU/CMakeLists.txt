@@ -1,14 +1,9 @@
 cmake_minimum_required(VERSION 3.21)
-project(HashSelection CUDA)
+project(HashSelection)
 
-set(CMAKE_CUDA_STANDARD 20)
-include_directories(../)
+set(CMAKE_CXX_STANDARD 20)
 
-add_executable(HashSelection main.cu
-        ../HostHash.h
-        ../HostHash.cu
-        ../Timer.h
-        ../Dictionary.h)
+include_directories(../Common)
+file (GLOB Targets main.cpp ../Common/*)
 
-set_target_properties(HashSelection PROPERTIES
-        CUDA_SEPARABLE_COMPILATION ON)
+add_executable(HashSelection ${Targets})
