@@ -5,9 +5,7 @@ find_package(OpenSSL REQUIRED)
 set(CMAKE_CXX_STANDARD 20)
 
 include_directories(../Common)
-file (GLOB Targets main.cpp ../Common/ReplacementDictionary.h ../Common/ReplacementDictionary.cpp ../Common/Timer.h
-#        ../Common/*)
-)
+file (GLOB Targets main.cpp ../Common/*)
 
 if (CMAKE_GENERATOR MATCHES "Ninja")
     set(CMAKE_CL_SHOWINCLUDES_PREFIX "Note: including file:")

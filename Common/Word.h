@@ -10,83 +10,74 @@ class Word final {
     const Char* ptr = nullptr;
     size_t length = 0;
 
-    static constexpr size_t strlen(const Char *s) {
-        const Char* p = s;
-        while (*p) p++;
-        return p - s;
-    };
-    static constexpr int strcmp(const Char* s1, const Char* s2) {
-        while (*s1 == *s2++)
-            if (*s1++ == '\0')
-                return (0);
-        /* XXX assumes wchar_t = int */
-        return static_cast<int>(*(const unsigned*)s1 - *(const unsigned*)--s2);
-    }
-    constexpr Char* strcpy(Char *s1, const Char* s2) {
-        Char *cp = s1;
-        while ((*cp++ = *s2++) != 0);
-        return s1;
-    }
+    static constexpr size_t strlen(const Char *s);
+    static constexpr int strcmp(const Char* s1, const Char* s2);
+    static constexpr Char* strcpy(Char *s1, const Char* s2);
 public:
-    constexpr Word(const Char *word)
-    : ptr(word != nullptr ? word : nullptr),
-      length(word != nullptr ? strlen(word) : 0) {}
-    static Word createEmpty() { return { nullptr }; }
+    constexpr Word(const Char *word);
 
     size_t size() const { return length; }
     bool empty() const { return length == 0; }
-
-    bool operator==(const Word& other) const {
-        return (length == other.length) && (strcmp(ptr, other.ptr) == 0);
-    }
-    bool operator==(const std::basic_string<Char>& other) const {
-        return wcsncmp(ptr, other.c_str(),
-                       length < other.size() ? length : other.size()) == 0;
-    }
-
-    Char operator[](unsigned position) const {
-        return (position < length ? ptr[position] : 0);
-    };
-    char byteAt(unsigned int position) const {
-        return (position < length * (sizeof(wchar_t) / sizeof(char)) ?
-                reinterpret_cast<const char*>(ptr)[position] : '\0');
-    }
+    Char operator[](unsigned position) const;
     const Char* c_str() const { return ptr; }
-    std::basic_string<Char> to_wstring() const {
-        return { ptr };
-    }
 
+    bool operator==(const Word& other) const;
+    bool operator==(const std::basic_string<Char>& other) const;
+
+    std::basic_string<Char> to_string() const { return { ptr }; }
+
+    friend std::basic_ostream<Char>& operator<<(std::basic_ostream<Char>& stream, const Word& data) { return stream << data.ptr; }
+
+    Word() = default;
+    Word(const Word& copy) = default;
+    Word& operator=(const Word& assign) = default;
+    Word(Word&& move) noexcept = default;
+    Word& operator=(Word&& moveAssign) noexcept = default;
 };
 
-template <typename Char>
-class Buffer final {
-    Char* buffer = nullptr;
-    unsigned fillCount = 0;
-    unsigned length = 0;
-public:
-    explicit Buffer(size_t size)
-    : buffer(new Char[size + 1]{}), length(size) {};
+template<typename Char>
+constexpr Word<Char>::Word(const Char *word)
+        : ptr(word != nullptr ? word : nullptr),
+          length(word != nullptr ? strlen(word) : 0) {}
 
-    void push(Char letter) {
-        if(fillCount >= length) return;
-        buffer[fillCount++] = letter;
-    }
-    void pop() {
-        if(fillCount == 0) return;
-        fillCount--;
-    }
+template<typename Char>
+constexpr size_t Word<Char>::strlen(const Char *s) {
+    const Char* p = s;
+    while (*p) p++;
+    return p - s;
+}
 
-    Char operator[](unsigned index) const {
-        if(index < fillCount)
-            return buffer[index];
-        return 0;
-    }
+template<typename Char>
+constexpr int Word<Char>::strcmp(const Char *s1, const Char *s2) {
+    while (*s1 == *s2++)
+        if (*s1++ == '\0')
+            return (0);
+    /* XXX assumes wchar_t = int */
+    return static_cast<int>(*(const unsigned*)s1 - *(const unsigned*)--s2);
+}
 
-    size_t size() const { return length; }
-    size_t filled() const { return fillCount; }
-    Word<Char> toWord() const { return { buffer }; }
+template<typename Char>
+constexpr Char *Word<Char>::strcpy(Char *s1, const Char *s2) {
+    Char *cp = s1;
+    while ((*cp++ = *s2++) != 0);
+    return s1;
+}
 
-    ~Buffer() { delete [] buffer; }
-};
+template<typename Char>
+bool Word<Char>::operator==(const Word &other) const {
+    return (length == other.length) && (strcmp(ptr, other.ptr) == 0);
+}
+
+template<typename Char>
+bool Word<Char>::operator==(const std::basic_string<Char> &other) const {
+    return wcsncmp(ptr, other.c_str(),
+                   length < other.size() ? length : other.size()) == 0;
+}
+
+template<typename Char>
+Char Word<Char>::operator[](unsigned int position) const {
+    return (position < length ? ptr[position] : 0);
+}
+
 
 #endif //HASHSELECTION_WORD_H
