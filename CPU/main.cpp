@@ -1,29 +1,38 @@
 #include <iostream>
 #include <functional>
+#include <Windows.h>
 
 #include "Timer.h"
-#include "HostHash.h"
-#include "Dictionary.h"
+//#include "HostHash.h"
+//#include "Dictionary.h"
 #include "ReplacementDictionary.h"
 
-void process(const Word& hash) {
-    static std::function<bool(const Word&, const Word&)> closure = [](const Word& current, const Word& requiredHash) {
-        HostSHA256 currentHash(current);
-        return currentHash == requiredHash;
-    };
-
-    for(unsigned i = 0; i < Dictionary::size(); ++i) {
-        const Word current = Dictionary::get(i);
-
-        ReplacementDictionary::enumerate(current, hash, closure);
-    }
-}
+//void process(const std::wstring& hash) {
+//    static std::function<bool(const Word&, const std::wstring&)> closure = [](const Word& current, const std::wstring& requiredHash) {
+//        HostSHA256 currentHash(current.c_str(), current.size());
+//        return currentHash.to_wstring() == requiredHash;
+//    };
+//
+//    for(unsigned i = 0; i < Dictionary::size(); ++i) {
+//        const Word current = Dictionary::get(i);
+//
+//        const std::optional<Word> result = ReplacementDictionary::enumerate(current, hash, closure);
+//        if(result.has_value())
+//            Timer::out << "Found a coincidence with word " << result.value() << L"." << Timer::endl;
+//    }
+//}
 
 int main() {
-    const Word pass = Dictionary::getRandom();
-    const HostSHA256 hash(pass);
-    Timer::out << L"Searching for password with hash '" << hash << L"'." << std::endl;
+    using Char = char;
 
-    process(hash.toWord());
+    ReplacementDictionary<Char>::getVariants('A');
+
+//    const auto password = ReplacementDictionary<Char>::rearrange(Dictionary::getRandom());
+//    Timer::out << L"Using word " << password << std::Endliner;
+//
+//    const HostSHA256 hash(password.c_str(), password.size());
+//    Timer::out << L"Searching for password with hash '" << hash.to_wstring() << L"'." << std::Endliner;
+//
+//    process(hash.to_wstring());
     return 0;
 }

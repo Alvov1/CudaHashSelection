@@ -9,8 +9,8 @@ add_executable(HashSelection main.cu
         DeviceHash.cu
         Array.h
         ../Common/Timer.h
-        ../Common/HostHash.h
-        ../Common/HostHash.cpp
+        ../CPU/HostHash.h
+        ../CPU/HostHash.cpp
         ../Common/Dictionary.h)
 
 set_target_properties(HashSelection PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
