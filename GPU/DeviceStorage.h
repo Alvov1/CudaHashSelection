@@ -52,69 +52,8 @@ class DeviceStorage final {
     /* Hash that we are looking for. */
     Char* devicePassword = nullptr;
 public:
-    DeviceStorage(const std::basic_string<Char>& pass) {
-        /* --------------------- Copying the dictionary. --------------------- */
-        /*
-         * 1. Allocate space for array of pointers in RAM.
-         * 2. In each pointer locate a word from the dictionary in the GPU memory.
-         * 3. Copy array of pointers from RAM to GPU
-        */
-
-        // Point 1:
-        hostDictionaryPointersArraySize = Dictionary<Char>::size();
-        hostDictionaryPointersArray = static_cast<Char**>(malloc(Dictionary<Char>::size() * sizeof(Char*)));
-        if(hostDictionaryPointersArray == nullptr)
-            throw std::runtime_error("DeviceStorage: malloc failed for the dictionary host array.");
-
-        // Point 2:
-        for(auto i = 0; i < hostDictionaryPointersArraySize; ++i) {
-            size_t elemSize = Dictionary<Char>::get(i).size() + 1;
-            if(cudaSuccess != cudaMalloc(&hostDictionaryPointersArray[i], elemSize * sizeof(Char)))
-                throw std::runtime_error("DeviceStorage: CudaMalloc failed for host array.");
-            if(cudaSuccess != cudaMemcpy(hostDictionaryPointersArray[i], Dictionary<Char>::get(i).c_str(), elemSize, cudaMemcpyHostToDevice))
-                throw std::runtime_error("DeviceStorage: CudaMemcpy failed for host array.");
-        }
-
-        // Point 3:
-        if(cudaSuccess != cudaMalloc(&deviceDictionaryPointersArray, hostDictionaryPointersArraySize * sizeof(Char*)))
-            throw std::runtime_error("DeviceStorage: CudaMalloc failed for device array.");
-        if(cudaSuccess != cudaMemcpy(deviceDictionaryPointersArray, hostDictionaryPointersArray, hostDictionaryPointersArraySize * sizeof(Char*), cudaMemcpyHostToDevice))
-            throw std::runtime_error("DeviceStorage: CudaMemcpy failed for device array.");
-        
-        /* ----------- Copying the size of an array to the device. ----------- */
-        if(cudaSuccess != cudaMalloc(&deviceDictionaryPointersArraySize, sizeof(size_t)))
-            throw std::runtime_error("DeviceStorage: CudaMalloc failed for device array size.");
-        if(cudaSuccess != cudaMemcpy(deviceDictionaryPointersArraySize, &hostDictionaryPointersArraySize, sizeof(size_t), cudaMemcpyHostToDevice))
-            throw std::runtime_error("DeviceStorage: CudaMemcpy failed for device array size.");
-
-        /* --------------- Copying the password to the device. --------------- */
-        hostVariantsPointersArray = static_cast<Char**>(malloc(englishLettersNumber * sizeof(Char*)));
-        if(hostVariantsPointersArray == nullptr)
-            throw std::runtime_error("DeviceStorage: malloc failed for the variants host array.");
-
-        for(unsigned i = 0; i < englishLettersNumber; ++i) {
-            size_t elemSize = Rep
-        }
-        
-        /* --------------- Copying the password to the device. --------------- */
-        if(cudaSuccess != cudaMalloc(&devicePassword, sizeof(Char) * (pass.size() + 1)))
-            throw std::runtime_error("DeviceStorage: CudaMalloc failed for device password.");
-        if(cudaMemcpy(devicePassword, pass.c_str(), sizeof(Char) * (pass.size() + 1), cudaMemcpyHostToDevice))
-            throw std::runtime_error("DeviceStorage: CudaMemcpy failed for device password.");
-    }
-    ~DeviceStorage() {
-        for(auto i = 0; i < hostDictionaryPointersArraySize; ++i)
-            if(cudaSuccess != cudaFree(hostDictionaryPointersArray[i]))
-                std::cerr << "DeviceStorageage: CudaFree failed for host array." << std::endl;
-        if(cudaSuccess != cudaFree(deviceDictionaryPointersArray))
-            std::cerr << "DeviceStorageage: CudaFree failed for device array." << std::endl;
-        free(hostDictionaryPointersArray);
-
-        if(cudaSuccess != cudaFree(deviceDictionaryPointersArraySize))
-            std::cerr << "DeviceStorageage: CudaFree failed for device array size." << std::endl;
-        if(cudaSuccess != cudaFree(devicePassword))
-            std::cerr << "DeviceStorageage: CudaFree failed for device password." << std::endl;
-    }
+    DeviceStorage(const std::basic_string<Char>& pass);
+    ~DeviceStorage();
 
     int process() {
         int copy = -1;
