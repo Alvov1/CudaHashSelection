@@ -18,10 +18,26 @@ namespace Console {
 class ScreenWriter {
     virtual void prepareLine() = 0;
 protected:
-    ScreenWriter& writeChar(char ch);
-    ScreenWriter& writeChar(wchar_t ch);
-    ScreenWriter& writeString(const char* string);
-    ScreenWriter& writeString(const wchar_t* string);
+    ScreenWriter& writeChar(char ch) {
+        prepareLine();
+        printf("%c", ch);
+        return *this;
+    };
+    ScreenWriter& writeChar(wchar_t ch) {
+        prepareLine();
+        wprintf(L"%lc", ch);
+        return *this;
+    };
+    ScreenWriter& writeString(const char* string) {
+        prepareLine();
+        printf("%s", string);
+        return *this;
+    };
+    ScreenWriter& writeString(const wchar_t* string) {
+        prepareLine();
+        wprintf(L"%10ls", string);
+        return *this;
+    };
 public:
     ScreenWriter() {
 #ifdef _WIN32
@@ -66,10 +82,20 @@ class TimedWriter final: public ScreenWriter {
     const std::chrono::system_clock::time_point begin = std::chrono::system_clock::now();
     bool newline = true;
 
-    void prepareLine() override;
+    void prepareLine() override {
+        if(!newline) return;
+        newline = false;
+
+        using namespace std::chrono;
+        wprintf(L"[%lli ms] ", duration_cast<milliseconds>(system_clock::now() - begin).count());
+    };
 public:
     using ScreenWriter::operator<<;
-    TimedWriter& operator<<(const Console::EndLine&) override;
+    TimedWriter& operator<<(const Console::EndLine&) override {
+        newline = true;
+        printf("\n");
+        return *this;
+    };
 };
 
 class ConsoleWriter final: public ScreenWriter {
@@ -79,6 +105,6 @@ class ConsoleWriter final: public ScreenWriter {
 namespace Console {
     static TimedWriter timer;
     static inline ConsoleWriter out;
-}
+};
 
 #endif //HASHSELECTION_SCREENWRITER_H

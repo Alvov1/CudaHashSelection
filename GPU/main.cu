@@ -15,9 +15,8 @@ unsigned devicesAvailable() {
 
 int main() {
     using Char = char;
-    Dictionary<Char>::calculateQuantities();
-
     ReplacementDictionary<Char>::showVariants();
+    Dictionary<Char>::calculateQuantities();
 
     const auto plainPassword = Dictionary<Char>::getRandom();
     Console::timer << "Using word: " << plainPassword << Console::endl;
@@ -28,5 +27,6 @@ int main() {
     const HostSHA256 hash(mutatedPassword.c_str(), mutatedPassword.size());
     Console::timer << "Searching for mutatedPassword with hash '" << hash.to_string() << "'." << Console::endl;
 
+    Dictionary<Char>::find(hash.to_string());
     return 0;
 }

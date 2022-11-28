@@ -31,14 +31,14 @@ const Word<Char>& Dictionary<Char>::getRandom() {
     static std::uniform_int_distribution<std::mt19937::result_type> distribution(0, size() - 1);
 
     const auto index = distribution(rng);
-    return words[index];
+    return Dictionary<Char>::words[index];
 }
 
 template <typename Char>
 const Word<Char>& Dictionary<Char>::get(unsigned int index) {
     if(index > size())
         throw std::invalid_argument("Index is out of range.");
-    return words[index];
+    return Dictionary<Char>::words[index];
 }
 
 template <>
@@ -84,7 +84,7 @@ void Dictionary<Char>::find(const std::basic_string<Char>& hash) {
 
 template<typename Char>
 void Dictionary<Char>::calculateQuantities() {
-    static constexpr unsigned approximateFrequency = 13000;
+    static constexpr unsigned approximateFrequency = 15000;
 
     Console::out << "The calculations involve iterating over the following number of permutations for each word:" << Console::endl;
     unsigned long long total = 0;

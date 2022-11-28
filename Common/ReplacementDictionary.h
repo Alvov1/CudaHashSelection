@@ -15,7 +15,7 @@ public:
 private:
     static const Word<Char> variants[];
 
-    static inline constexpr Word<Char> empty;
+    constexpr static Word<Char> empty = Word<Char>(nullptr);
 
     static bool nextPermutation(const Word<Char>& candidate, const std::basic_string<Char>& pattern,
         std::basic_string<Char>& buffer, const Comparator& func);
