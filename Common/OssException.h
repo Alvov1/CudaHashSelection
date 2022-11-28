@@ -9,7 +9,7 @@ class OssException final : public std::exception {
 public:
     explicit OssException(std::string message)
     : message(std::move(message) + ": " + ERR_error_string(ERR_get_error(), nullptr)) {}
-    const char *what() noexcept { return message.c_str(); }
+    const char *what() const override { return message.c_str(); }
 };
 
 #endif //HASHSELECTION_OSSEXCEPTION_H

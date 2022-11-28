@@ -1,14 +1,11 @@
-#include <functional>
-
 #include "ScreenWriter.h"
-#include "HostHash.h"
 #include "Dictionary.h"
+#include "HostHash.h"
 
 int main() {
     using Char = char;
-    Dictionary<Char>::calculateQuantities();
-
     ReplacementDictionary<Char>::showVariants();
+    Dictionary<Char>::calculateQuantities();
 
     const auto plainPassword = Dictionary<Char>::getRandom();
     Console::timer << "Using word: " << plainPassword << Console::endl;

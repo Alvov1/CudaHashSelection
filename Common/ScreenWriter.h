@@ -4,6 +4,11 @@
 #include <string>
 #include <chrono>
 #include <memory>
+
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
 #include "Word.h"
 
 namespace Console {
@@ -18,7 +23,11 @@ protected:
     ScreenWriter& writeString(const char* string);
     ScreenWriter& writeString(const wchar_t* string);
 public:
-    ScreenWriter() { /*SetConsoleOutputCP(CP_UTF8);*/ }
+    ScreenWriter() {
+#ifdef _WIN32
+        SetConsoleOutputCP(CP_UTF8);
+#endif
+    }
 
     template <typename PointerBase>
     ScreenWriter& operator<<(const PointerBase* data) {

@@ -15,7 +15,7 @@ public:
 private:
     static const Word<Char> variants[];
 
-    static constexpr Word empty = Word<Char>(nullptr);
+    static inline constexpr Word<Char> empty;
 
     static bool nextPermutation(const Word<Char>& candidate, const std::basic_string<Char>& pattern,
         std::basic_string<Char>& buffer, const Comparator& func);
@@ -64,7 +64,7 @@ template<typename Char>
 std::basic_string<Char> ReplacementDictionary<Char>::rearrange(const Word<Char>& word) {
     static std::random_device dev;
     static std::mt19937 rng(dev());
-    static std::uniform_int_distribution<std::mt19937::result_type> changing(0, 1);
+    static std::uniform_int_distribution<std::mt19937::result_type> changing(0, 2);
 
     std::basic_string<Char> result = word.to_string();
 
@@ -84,24 +84,20 @@ std::basic_string<Char> ReplacementDictionary<Char>::rearrange(const Word<Char>&
 
 template <>
 constexpr const Word<char> ReplacementDictionary<char>::variants[] = {
-        { "4дàáâãäåæāăą" },{ "86вÞßþ" },{ "сçćĉċč" },{ "дďđ" },
-        { "3еēĕėęěèéêë" },{ "" },{ "9ðĝğġģ" },{ "нĥĦħ" },
-        { "ìíîïĩīĭįı" },{ "Ĳĳĵ" },{ "кķĸ" },{ "1ĺļľŀł" },
-        { "м" },{ "пñńņňŉŋ" },{ "о0òóôõöøōŏő" },{ "р" },
-        { "0" },{ "гŕŗř" },{ "$2śŝşš" },{ "т1ţťŧ" },
-        { "ùúûüũūŭůűų" },{ "" },{ "ŵ" },{ "х×" },
-        { "уŷýÿ" },{ "źżž" },
+        { "4@^да" }, { "8ßв" }, { "[<(с" }, { "д" }, { "3&£е€" },
+        { "ƒv" }, { "6&9" }, { "#н" }, { "1|!" }, { "]" },
+        { "к<" }, { "!12£7|" }, { "м" }, { "^ทп" }, { "0Øо" },
+        { "9р" }, { "20&9" }, { "972®я" }, { "3$z§2" }, { "т7+†" },
+        { "vบ" }, { "" }, { "พ" }, { "×" }, { "jу¥" }, { "27s" }
 };
 
 template <>
 constexpr const Word<wchar_t> ReplacementDictionary<wchar_t>::variants[] = {
-        { L"4дàáâãäåæāăą" },{ L"86вÞßþ" },{ L"сçćĉċč" },{ L"дďđ" },
-        { L"3еēĕėęěèéêë" },{ L"" },{ L"9ðĝğġģ" },{ L"нĥĦħ" },
-        { L"ìíîïĩīĭįı" },{ L"Ĳĳĵ" },{ L"кķĸ" },{ L"1ĺļľŀł" },
-        { L"м" },{ L"пñńņňŉŋ" },{ L"о0òóôõöøōŏő" },{ L"р" },
-        { L"0" },{ L"гŕŗř" },{ L"$2śŝşš" },{ L"т1ţťŧ" },
-        { L"ùúûüũūŭůűų" },{ L"" },{ L"ŵ" },{ L"х×" },
-        { L"уŷýÿ" },{ L"źżž" },
+        { L"4@^да" }, { L"8ßв" }, { L"[<(с" }, { L"д" }, { L"3&£е€" },
+        { L"ƒv" }, { L"6&9" }, { L"#н" }, { L"1|!" }, { L"]" },
+        { L"к<" }, { L"!12£7|" }, { L"м" }, { L"^ทп" }, { L"0Øо" },
+        { L"9р" }, { L"20&9" }, { L"972®я" }, { L"3$z§2" }, { L"т7+†" },
+        { L"vบ" }, { L"" }, { L"พ" }, { L"×" }, { L"jу¥" }, { L"27s" }
 };
 
 template<typename Char>

@@ -1,9 +1,8 @@
 #include <iostream>
 
+#include "ScreenWriter.h"
 #include "Dictionary.h"
-#include "StorageGPU.h"
 #include "HostHash.h"
-#include "Timer.h"
 
 unsigned devicesAvailable() {
     int deviceCount = 0;
@@ -15,18 +14,19 @@ unsigned devicesAvailable() {
 }
 
 int main() {
-    Timer::out << "Founded " << devicesAvailable() << " Cuda-capable devices available." << std::endl;
+    using Char = char;
+    Dictionary<Char>::calculateQuantities();
 
-    const auto pass = Dictionary::giveRandom();
-    const auto hostHash = HostSHA256(pass).out();
-    Timer::out << "Searching for password with hash '" << hostHash << "'." << std::endl;
+    ReplacementDictionary<Char>::showVariants();
 
-    StorageGPU storage(Dictionary::data(), Dictionary::size(), hostHash);
-    Timer::out << "Words are loaded on device." << std::endl;
+    const auto plainPassword = Dictionary<Char>::getRandom();
+    Console::timer << "Using word: " << plainPassword << Console::endl;
 
-    const auto result = storage.process();
-    if(result != -1)
-        Timer::out << "Fount coincidence on place " << result << ". Password is '" << Dictionary::instance()[result] << "'." << std::endl;
+    const auto mutatedPassword = ReplacementDictionary<Char>::rearrange(plainPassword);
+    Console::timer << "Using after rearrangement: " << mutatedPassword << Console::endl;
+
+    const HostSHA256 hash(mutatedPassword.c_str(), mutatedPassword.size());
+    Console::timer << "Searching for mutatedPassword with hash '" << hash.to_string() << "'." << Console::endl;
 
     return 0;
 }
