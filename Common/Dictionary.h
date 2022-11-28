@@ -30,7 +30,7 @@ const Word<Char>& Dictionary<Char>::getRandom() {
     static std::mt19937 rng(dev());
     static std::uniform_int_distribution<std::mt19937::result_type> distribution(0, size() - 1);
 
-    const auto index = 10;//distribution(rng);
+    const auto index = distribution(rng);
     return words[index];
 }
 
