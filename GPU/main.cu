@@ -3,6 +3,7 @@
 #include "ScreenWriter.h"
 #include "Dictionary.h"
 #include "HostHash.h"
+#include "DeviceStorage.h"
 
 unsigned devicesAvailable() {
     int deviceCount = 0;
