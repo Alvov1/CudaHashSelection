@@ -49,7 +49,7 @@ template<typename Char>
 std::basic_string<Char> HostSHA256<Char>::to_string() const {
     std::basic_stringstream<Char> ss;
     for (unsigned i = 0; i < bytesLength; ++i)
-        ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(bytes[i]);
+        ss << std::hex << std::setw(2) << std::setfill(Char('0')) << static_cast<int>(bytes[i]);
     return ss.str();
 }
 

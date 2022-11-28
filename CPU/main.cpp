@@ -1,17 +1,23 @@
 #include <functional>
 
-#include "Timer.h"
+#include "ScreenWriter.h"
 #include "HostHash.h"
 #include "Dictionary.h"
 
 int main() {
     using Char = char;
+    Dictionary<Char>::calculateQuantities();
 
-    const auto password = ReplacementDictionary<Char>::rearrange(Dictionary<Char>::getRandom());
-    Timer::out << "Using word " << password << Timer::endl;
+    ReplacementDictionary<Char>::showVariants();
 
-    const HostSHA256 hash(password.c_str(), password.size());
-    Timer::out << "Searching for password with hash '" << hash.to_string() << "'." << Timer::endl;
+    const auto plainPassword = Dictionary<Char>::getRandom();
+    Console::timer << "Using word: " << plainPassword << Console::endl;
+
+    const auto mutatedPassword = ReplacementDictionary<Char>::rearrange(plainPassword);
+    Console::timer << "Using after rearrangement: " << mutatedPassword << Console::endl;
+
+    const HostSHA256 hash(mutatedPassword.c_str(), mutatedPassword.size());
+    Console::timer << "Searching for mutatedPassword with hash '" << hash.to_string() << "'." << Console::endl;
 
     Dictionary<Char>::find(hash.to_string());
     return 0;

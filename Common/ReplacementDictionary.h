@@ -25,21 +25,26 @@ public:
     static std::optional<std::basic_string<Char>> enumerate(const Word<Char>& candidate, const std::basic_string<Char>& pattern, const Comparator & func);
 
     static std::basic_string<Char> rearrange(const Word<Char>& word);
+
+    static void showVariants();
 };
 
 template<typename Char>
 bool ReplacementDictionary<Char>::nextPermutation(const Word<Char> &candidate, const std::basic_string<Char> &pattern,
         std::basic_string<Char> &buffer, const Comparator& func) {
-    if(buffer.size() == candidate.size()) return func(buffer, pattern);
+    /* Recursion out. */
+    if(buffer.size() == candidate.size())
+        return func(buffer, pattern);
 
+    /* Recursion continue. */
     const unsigned position = buffer.size();
     buffer.push_back(candidate[position]);
     if(nextPermutation(candidate, pattern, buffer, func)) return true;
     buffer.pop_back();
 
-    const auto& variants = ReplacementDictionary::getVariants(candidate[position]);
-    for(unsigned i = 0; i < variants.size(); ++i) {
-        buffer.push_back(variants[i]);
+    const Word<Char>& tVariants = ReplacementDictionary::getVariants(candidate[position]);
+    for(unsigned i = 0; i < tVariants.size(); ++i) {
+        buffer.push_back(tVariants[i]);
         if(nextPermutation(candidate, pattern, buffer, func)) return true;
         buffer.pop_back();
     }
@@ -53,9 +58,6 @@ std::optional<std::basic_string<Char>> ReplacementDictionary<Char>::enumerate(co
     if(nextPermutation(candidate, pattern, buffer, func))
         return { buffer };
     return {};
-//    std::basic_string<Char> value(candidate.c_str());
-//    if(func(value, pattern)) return { value };
-//    return {};
 }
 
 template<typename Char>
@@ -64,60 +66,62 @@ std::basic_string<Char> ReplacementDictionary<Char>::rearrange(const Word<Char>&
     static std::mt19937 rng(dev());
     static std::uniform_int_distribution<std::mt19937::result_type> changing(0, 1);
 
-    auto result = word.to_string();
+    std::basic_string<Char> result = word.to_string();
 
-//    for(auto& ch : result) {
-//        const Word<char>& variants = getVariants(ch);
-//        if(variants.empty() || changing(rng) != 0) continue;
-//
-//        char replacement = variants[0];
-//        for (unsigned i = 0; i < variants.size() && changing(rng) != 0; ++i)
-//            replacement = variants[i];
-//
-//        ch = replacement;
-//    }
+    for(auto& ch : result) {
+        const Word<Char>& tVariants = getVariants(ch);
+        if(tVariants.empty() || changing(rng) != 0) continue;
+
+        Char replacement = tVariants[0];
+        for (unsigned i = 0; i < tVariants.size() && changing(rng) != 0; ++i)
+            replacement = tVariants[i];
+
+        ch = replacement;
+    }
 
     return result;
 }
 
 template <>
 constexpr const Word<char> ReplacementDictionary<char>::variants[] = {
-        { "ÀÁÂÃÄÅÆàáâãäåæĀāĂăĄą" },{ "Þßþ" },{ "ÇçĆćĈĉĊċČč" },{ "ĎďĐđÐ" },
-        { "ĒēĔĕĖėĘęĚěèéêëÈÉÊË" },{ "" },{ "ĜðĝĞğĠġĢģ" },{ "ĤĥĦħ" },
-        { "ÌÍÎÏìíîïĨĩĪīĬĭĮįİı" },{ "ĲĳĴĵ" },{ "Ķķĸ" },{ "ĹĺĻļĽľĿŀŁł" },
-        { "" },{ "ÑñŃńŅņŇňŉŊŋ" },{ "òóôõöøÒÓÔÕÖØŌōŎŏŐő" },{ "" },
-        { "" },{ "ŔŕŖŗŘř" },{ "ŚśŜŝŞşŠš" },{ "ŢţŤťŦŧ" },
-        { "ÙÚÛÜùúûüŨũŪūŬŭŮůŰűŲų" },{ "" },{ "Ŵŵ" },{ "×" },
-        { "ŶŷŸÝýÿ" },{ "ŹźŻżŽž" },
+        { "4дàáâãäåæāăą" },{ "86вÞßþ" },{ "сçćĉċč" },{ "дďđ" },
+        { "3еēĕėęěèéêë" },{ "" },{ "9ðĝğġģ" },{ "нĥĦħ" },
+        { "ìíîïĩīĭįı" },{ "Ĳĳĵ" },{ "кķĸ" },{ "1ĺļľŀł" },
+        { "м" },{ "пñńņňŉŋ" },{ "о0òóôõöøōŏő" },{ "р" },
+        { "0" },{ "гŕŗř" },{ "$2śŝşš" },{ "т1ţťŧ" },
+        { "ùúûüũūŭůűų" },{ "" },{ "ŵ" },{ "х×" },
+        { "уŷýÿ" },{ "źżž" },
 };
 
 template <>
 constexpr const Word<wchar_t> ReplacementDictionary<wchar_t>::variants[] = {
-        { L"ÀÁÂÃÄÅÆàáâãäåæĀāĂăĄą" },{ L"Þßþ" },{ L"ÇçĆćĈĉĊċČč" },{ L"ĎďĐđÐ" },
-        { L"ĒēĔĕĖėĘęĚěèéêëÈÉÊË" },{ L"" },{ L"ĜðĝĞğĠġĢģ" },{ L"ĤĥĦħ" },
-        { L"ÌÍÎÏìíîïĨĩĪīĬĭĮįİı" },{ L"ĲĳĴĵ" },{ L"Ķķĸ" },{ L"ĹĺĻļĽľĿŀŁł" },
-        { L"" },{ L"ÑñŃńŅņŇňŉŊŋ" },{ L"òóôõöøÒÓÔÕÖØŌōŎŏŐő" },{ L"" },
-        { L"" },{ L"ŔŕŖŗŘř" },{ L"ŚśŜŝŞşŠš" },{ L"ŢţŤťŦŧ" },
-        { L"ÙÚÛÜùúûüŨũŪūŬŭŮůŰűŲų" },{ L"" },{ L"Ŵŵ" },{ L"×" },
-        { L"ŶŷŸÝýÿ" },{ L"ŹźŻżŽž" },
+        { L"4дàáâãäåæāăą" },{ L"86вÞßþ" },{ L"сçćĉċč" },{ L"дďđ" },
+        { L"3еēĕėęěèéêë" },{ L"" },{ L"9ðĝğġģ" },{ L"нĥĦħ" },
+        { L"ìíîïĩīĭįı" },{ L"Ĳĳĵ" },{ L"кķĸ" },{ L"1ĺļľŀł" },
+        { L"м" },{ L"пñńņňŉŋ" },{ L"о0òóôõöøōŏő" },{ L"р" },
+        { L"0" },{ L"гŕŗř" },{ L"$2śŝşš" },{ L"т1ţťŧ" },
+        { L"ùúûüũūŭůűų" },{ L"" },{ L"ŵ" },{ L"х×" },
+        { L"уŷýÿ" },{ L"źżž" },
 };
 
-template<>
-constexpr const Word<char>& ReplacementDictionary<char>::getVariants(char key) {
-    if(key >= 'A' && key <= 'Z')
+template<typename Char>
+constexpr const Word<Char>& ReplacementDictionary<Char>::getVariants(Char key) {
+    if(key >= Char('A') && key <= Char('Z'))
         return variants[key - 'A'];
-    if(key >= 'a' && key <= 'z')
+    if(key >= Char('a') && key <= Char('z'))
         return variants[key - 'a'];
     return empty;
 }
 
-template<>
-constexpr const Word<wchar_t>& ReplacementDictionary<wchar_t>::getVariants(wchar_t key) {
-    if(key >= L'A' && key <= L'Z')
-        return variants[key - L'A'];
-    if(key >= L'a' && key <= L'z')
-        return variants[key - L'a'];
-    return empty;
+template<typename Char>
+void ReplacementDictionary<Char>::showVariants() {
+    Console::out << "Using such password mutations:" << Console::endl;
+    for(Char letter = Char('A'); letter != Char('Z'); ++letter) {
+        const auto& tVariants = ReplacementDictionary<Char>::getVariants(letter);
+        if(tVariants.size() != 0)
+            Console::out << letter << ": " << tVariants << Console::endl;
+    }
+    Console::out << Console::endl;
 }
 
 #endif //HASHSELECTION_REPLACEMENTDICTIONARY_H
