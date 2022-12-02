@@ -5,7 +5,7 @@
 #include <thread>
 
 #include "DeviceHash.h"
-#include "Dictionary.h"
+#include "PasswordDictionary.h"
 #include "ReplacementDictionary.h"
 
 template <typename Char>

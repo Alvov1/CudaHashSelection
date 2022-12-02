@@ -1,21 +1,29 @@
-#include "ScreenWriter.h"
-#include "Dictionary.h"
+#include "Timer.h"
 #include "HostHash.h"
+#include "PasswordDictionary.h"
 
 int main() {
-    using Char = char;
-    ReplacementDictionary<Char>::showVariants();
-    Dictionary<Char>::calculateQuantities();
+    ReplacementDictionary replacements;
+    replacements.show();
 
-    const auto plainPassword = Dictionary<Char>::getRandom();
+    PasswordDictionary passwords;
+    passwords.calculateQuantities(replacements);
+
+    const auto& plainPassword = passwords.getRandom();
     Console::timer << "Using word: " << plainPassword << Console::endl;
 
-    const auto mutatedPassword = ReplacementDictionary<Char>::rearrange(plainPassword);
+    const auto mutatedPassword = replacements.rearrange(plainPassword);
     Console::timer << "Using after rearrangement: " << mutatedPassword << Console::endl;
 
     const HostSHA256 hash(mutatedPassword.c_str(), mutatedPassword.size());
     Console::timer << "Searching for mutatedPassword with hash '" << hash.to_string() << "'." << Console::endl;
 
-    Dictionary<Char>::find(hash.to_string());
+    std::function comparator =
+        [](const std::string& current, const std::string& requiredHash) {
+            HostSHA256 currentHash(current.c_str(), current.size());
+            return currentHash.to_string() == requiredHash;
+        };
+
+    passwords.find(replacements, hash.to_string(), comparator);
     return 0;
 }
