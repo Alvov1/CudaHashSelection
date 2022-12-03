@@ -37,18 +37,16 @@ public:
         return this->writeString(data.c_str());
     };
 
-    ScreenWriter& operator<<(char ch);
-
-    ScreenWriter& operator<<(wchar_t ch);
-
     template <typename Numeric>
     ScreenWriter& operator<<(Numeric value) {
         return writeString(std::to_string(value).c_str());
     };
 
-    virtual ScreenWriter& operator<<(const Console::EndLine&) {
-        return this->writeString("\n");
-    };
+    ScreenWriter& operator<<(char ch);
+
+    ScreenWriter& operator<<(wchar_t ch);
+
+    virtual ScreenWriter& operator<<(const Console::EndLine&) = 0;
 };
 
 #endif //HASHSELECTION_SCREENWRITER_H

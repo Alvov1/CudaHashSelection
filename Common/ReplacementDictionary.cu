@@ -72,3 +72,9 @@ void ReplacementDictionary::show() const {
     Console::cout << Console::endl;
 }
 
+const std::string &ReplacementDictionary::operator[](char key) const {
+    if(std::tolower(key) < 'a' || std::tolower(key) > 'z')
+        return emptyWord;
+    return get()[std::tolower(key) - 'a'];
+}
+

@@ -5,6 +5,9 @@
 
 class ConsoleWriter final: public ScreenWriter {
     void prepareLine() override {};
+public:
+    using ScreenWriter::operator<<;
+    ConsoleWriter& operator<<(const Console::EndLine&) override { this->writeChar('\n'); return *this; }
 };
 
 namespace Console {

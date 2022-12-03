@@ -1,11 +1,11 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.22)
 project(HashSelection CUDA)
 
 find_package(OpenSSL REQUIRED)
 set(CMAKE_CUDA_STANDARD 20)
 
-include_directories(../Common)
-file (GLOB Targets main.cpp * ../Common/*)
+include_directories(../Common ../Common/ScreenWriting DeviceDataStructures ../CPU)
+file (GLOB Targets * ../Common/* ../Common/ScreenWriting/* )
 
 add_executable(HashSelection ${Targets})
 

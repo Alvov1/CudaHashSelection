@@ -10,8 +10,8 @@
 #include "ReplacementDictionary.h"
 
 class PasswordDictionary final : public IDictionary {
-    const WordArray& get() const override;;
 public:
+    const WordArray& get() const override;
     const std::string& operator[](unsigned index) const { return get()[index]; };
     const std::string& getRandom() const;;
 

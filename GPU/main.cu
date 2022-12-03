@@ -1,9 +1,11 @@
-#include <iostream>
-
-#include "ScreenWriter.h"
-#include "Dictionary.h"
+#include <functional>
+#include "Timer.h"
 #include "HostHash.h"
-#include "DeviceStorage.h"
+#include "PasswordDictionary.h"
+
+#include "DevicePointer.h"
+#include "DeviceFunctions.h"
+#include "DeviceDictionary.h"
 
 unsigned devicesAvailable() {
     int deviceCount = 0;
@@ -15,19 +17,24 @@ unsigned devicesAvailable() {
 }
 
 int main() {
-    using Char = char;
-    ReplacementDictionary<Char>::showVariants();
-    Dictionary<Char>::calculateQuantities();
+    Console::cout << "Found " << devicesAvailable() << " cuda devices available." << Console::endl;
 
-    const auto plainPassword = Dictionary<Char>::getRandom();
+    ReplacementDictionary mutations;
+    mutations.show();
+
+    PasswordDictionary passwords;
+    passwords.calculateQuantities(mutations);
+
+    const auto& plainPassword = passwords.getRandom();
     Console::timer << "Using word: " << plainPassword << Console::endl;
-
-    const auto mutatedPassword = ReplacementDictionary<Char>::rearrange(plainPassword);
+    const auto mutatedPassword = mutations.rearrange(plainPassword);
     Console::timer << "Using after rearrangement: " << mutatedPassword << Console::endl;
-
     const HostSHA256 hash(mutatedPassword.c_str(), mutatedPassword.size());
     Console::timer << "Searching for mutatedPassword with hash '" << hash.to_string() << "'." << Console::endl;
 
-    Dictionary<Char>::find(hash.to_string());
+    const DeviceDictionary devicePasswords(passwords.get());
+    const DeviceDictionary deviceMutations(mutations.get());
+    const DevicePointer password(hash.to_string().c_str(), hash.to_string().size());
+
     return 0;
 }

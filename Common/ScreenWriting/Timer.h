@@ -9,7 +9,7 @@ class TimedWriter final: public ScreenWriter {
     void prepareLine() override;;
 public:
     using ScreenWriter::operator<<;
-    TimedWriter& operator<<(const Console::EndLine&) override;;
+    TimedWriter& operator<<(const Console::EndLine&) override;
 };
 
 namespace Console {

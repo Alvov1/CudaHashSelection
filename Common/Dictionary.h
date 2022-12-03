@@ -3,12 +3,13 @@
 
 #include <vector>
 #include <string>
+#include <functional>
 
 class IDictionary {
 protected:
     using WordArray = std::vector<std::string>;
     virtual const WordArray& get() const = 0;
-    static const std::string emptyWord;
+    static inline const std::string emptyWord {};
 
     using Comparator = std::function<bool(const std::string&, const std::string&)>;
 public:
