@@ -1,37 +1,25 @@
 #include "DeviceHash.h"
 
-DEVICE Array<char> DeviceSHA256::count() {
-    const auto& digest = finalDigest();
-    Array<char> buffer(2 * DigestSize + 1);
-    buffer[2 * DigestSize] = 0;
-
-    for(auto i = 0; i < 8; i++) {
-        auto number = digest[i];
-        auto position = i * 8 + 7;
-        for(auto j = 0; j < 8; ++j, number /= 16) {
-            auto curValue = number % 16;
-
-            if(curValue < 10) buffer[position--] = static_cast<char>('0' + curValue);
-            else buffer[position--] = static_cast<char>('a' + curValue - 10);
-        }
-    }
-
-    return buffer;
-}
-
-DEVICE DeviceSHA256::DigestType DeviceSHA256::finalDigest() {
-    unsigned int block_nb;
-    unsigned int pm_len;
-    unsigned int len_b;
-    block_nb = (1 + ((DeviceSHA256::BlockSize - 9) < (len_ % DeviceSHA256::BlockSize)));
-    len_b = (tot_len_ + len_) << 3;
-    pm_len = block_nb << 6;
+DEVICE void DeviceSHA256::finalDigest() {
+    unsigned block_nb = (1 + ((DeviceSHA256::BlockSize - 9) < (len_ % DeviceSHA256::BlockSize)));
+    unsigned len_b = (tot_len_ + len_) << 3;
+    unsigned int pm_len = block_nb << 6;
     memset(block_ + len_, 0, pm_len - len_);
     block_[len_] = 0x80;
     SHA2_UNPACK32(len_b, block_ + pm_len - 4);
     transform_(block_, block_nb);
 
-    return {digest_, 8};
+    for(auto i = 0; i < 8; i++) {
+        auto number = digest_[i];
+        auto position = i * 8 + 7;
+        for(auto j = 0; j < 8; ++j, number /= 16) {
+            auto curValue = number % 16;
+            if(curValue < 10)
+                result[position--] = static_cast<char>('0' + curValue);
+            else
+                result[position--] = static_cast<char>('a' + curValue - 10);
+        }
+    }
 }
 
 DEVICE void DeviceSHA256::update_(unsigned char const *message, size_t len) {
@@ -114,4 +102,3 @@ DEVICE constexpr unsigned DeviceSHA256::sha256_k(size_t index) {
     };
     return constValues[index];
 }
-

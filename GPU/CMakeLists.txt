@@ -4,8 +4,17 @@ project(HashSelection CUDA)
 find_package(OpenSSL REQUIRED)
 set(CMAKE_CUDA_STANDARD 20)
 
-include_directories(../Common ../Common/ScreenWriting DeviceDataStructures ../CPU)
-file (GLOB Targets * ../Common/* ../Common/ScreenWriting/* )
+include_directories(.
+        ../Common
+        ../Common/ScreenWriting
+        DeviceDataStructures
+        HostToDeviceTransactions
+        ../CPU)
+file (GLOB Targets *
+        ../Common/*
+        ../Common/ScreenWriting/*
+        DeviceDataStructures/*
+        HostToDeviceTransactions/*)
 
 add_executable(HashSelection ${Targets})
 

@@ -6,6 +6,7 @@
 #include <random>
 #include <optional>
 
+#include "Timer.h"
 #include "Console.h"
 #include "Dictionary.h"
 

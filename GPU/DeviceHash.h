@@ -4,16 +4,16 @@
 #define DEVICE __device__
 
 #include <cstdio>
-#include <cstdint>
-#include "Array.h"
+#include "DeviceVector.h"
 
 class DeviceSHA256 {
     static constexpr size_t BlockSize = (512 / 8);
-    static constexpr size_t DigestSize = ( 256 / 8);
-    using DigestType = Array<uint32_t>;
+    static constexpr size_t DigestSize = (256 / 8);
+    using DigestType = DeviceVector<uint32_t>;
 
     DEVICE void update_(unsigned char const *message, size_t len);
     DEVICE void transform_(unsigned char const *message, unsigned int block_nb);
+    DEVICE void finalDigest();
 
     DEVICE static inline uint32_t SHA2_SHFR(uint32_t x, uint32_t n) { return x >> n; }
     DEVICE static inline uint32_t SHA2_ROTR(uint32_t x, uint32_t n) { return ((x >> n) | (x << ((sizeof(x) << 3) - n))); }
@@ -40,18 +40,22 @@ class DeviceSHA256 {
     unsigned char block_[2 * BlockSize]{};
     uint32_t digest_[8] = {
             0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
-            0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19 };
+            0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19};
 
-    DEVICE DigestType finalDigest();
+    DeviceVector<char> result {2 * DigestSize + 1, '\0'};
 public:
     DEVICE inline DeviceSHA256(const char* value, size_t size) {
         auto const *in_uchar = reinterpret_cast<unsigned char const *>(value);
         update_(in_uchar, size);
+        finalDigest();
     }
-    DEVICE DeviceSHA256(DeviceSHA256 const &) = delete;
-    DEVICE DeviceSHA256 &operator=(DeviceSHA256 const &) = delete;
+    DEVICE const DeviceVector<char>& toVector() { return result; };
 
-    DEVICE Array<char> count();
+    DEVICE ~DeviceSHA256() = default;
+    DEVICE DeviceSHA256(const DeviceSHA256& copy) = delete;
+    DEVICE DeviceSHA256 &operator=(const DeviceSHA256& assign) = delete;
+    DEVICE DeviceSHA256(DeviceSHA256&& move) noexcept = delete;
+    DEVICE DeviceSHA256& operator=(DeviceSHA256&& moveAssign) noexcept = delete;
 };
 
 #endif //HASHSELECTION_DEVICEHASH_H

@@ -6,6 +6,7 @@
 
 #include "Timer.h"
 #include "Console.h"
+
 #include "Dictionary.h"
 #include "ReplacementDictionary.h"
 

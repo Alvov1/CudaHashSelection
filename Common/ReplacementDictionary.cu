@@ -63,7 +63,7 @@ std::string ReplacementDictionary::rearrange(const std::string& word) const {
 }
 
 void ReplacementDictionary::show() const {
-    Console::cout << "Using such password mutations:" << Console::endl;
+    Console::cout << Console::endl << "Using such password mutations:" << Console::endl;
     for(char letter = char('A'); letter != char('Z'); ++letter) {
         const auto& tVariants = this->operator[](letter);
         if(!tVariants.empty())

@@ -1,27 +1,37 @@
 #ifndef HASHSELECTION_DEVICEFUNCTIONS_H
 #define HASHSELECTION_DEVICEFUNCTIONS_H
 
+#include "DeviceHash.h"
 #include "DeviceWord.h"
 #include "DeviceVector.h"
-#include "DevicePointer.h"
-#include "DeviceDictionary.h"
+#include "ArrayOnDevice.h"
+#include "DictionaryOnDevice.h"
+
 #define DEVICE __device__
 #define GLOBAL __global__
 
 namespace DeviceFunctions {
-    DEVICE bool hashAndCompare(const DeviceVector& candidate, const DeviceWord& requiredHash) {
-        return false;
+    DEVICE bool fillSolution(const DeviceVector<char>& value, char** place) {
+        place = static_cast<char**>(malloc(sizeof(char*)));
+        *place = value.getInternalCopy();
+        return true;
     }
 
+    DEVICE bool hashAndCompare(const DeviceVector<char>& candidate, const DeviceWord& requiredHash) {
+        DeviceSHA256 hash(candidate.get(), candidate.size());
+        printf("Calculated hash is %size\n", hash.toVector().get());
+    }
 
-    DEVICE bool nextPermutation(const DeviceWord& candidate,
-        const DeviceWord& requiredHash, DeviceVector& buffer, const char* const* mutations) {
-        if(buffer.size() == candidate.size())
-            return hashAndCompare(buffer, requiredHash);
+    DEVICE bool nextPermutation(const DeviceWord& candidate, const DeviceWord& requiredHash,
+                                DeviceVector<char>& buffer, const char* const* mutations, char** resultBuffer) {
+        /* Recursion out. */
+        if(buffer.size() == candidate.size() && hashAndCompare(buffer, requiredHash))
+            return fillSolution(buffer, resultBuffer);
 
+        /* Recursion continue; */
         const unsigned position = buffer.size();
         buffer.push_back(candidate[position]);
-        if(nextPermutation(candidate, requiredHash, buffer, mutations)) return true;
+        if(nextPermutation(candidate, requiredHash, buffer, mutations, resultBuffer)) return true;
         buffer.pop_back();
 
         char replacementKey = '0';
@@ -35,7 +45,7 @@ namespace DeviceFunctions {
         for(unsigned i = 0; i < variants.size(); ++i) {
             const char variant = variants[i];
             buffer.push_back(variant);
-            if(nextPermutation(candidate, requiredHash, buffer, mutations))
+            if(nextPermutation(candidate, requiredHash, buffer, mutations, resultBuffer))
                 return true;
             buffer.pop_back();
         }
@@ -43,24 +53,24 @@ namespace DeviceFunctions {
     }
 
     GLOBAL void process(const char* const* passwords, size_t passSize,
-                   const char* const* mutations, size_t mutSize,
-                   unsigned wordsPerThread, const char* requiredHash, int* result) {
+                   const char* const* mutations, unsigned wordsPerThread,
+                   const char* requiredHash, char* placeForResult) {
         const auto threadNumber = blockIdx.x * blockDim.x + threadIdx.x;
+        if(threadNumber > 0) return;
+
         auto passwordPosition = threadNumber * wordsPerThread;
         if(passwordPosition >= passSize) return;
 
-        const auto wordsToCheck = (passwordPosition + wordsPerThread < passSize) ?
-                wordsPerThread : passSize - passwordPosition;
+        DeviceWord current(passwords[passwordPosition]);
+        DeviceSHA256 hash(current.get(), current.size());
 
-        for(unsigned i = 0; i < wordsToCheck; ++passwordPosition, ++i) {
-            if(*result != -1) return; /* Founded a solution in another thread. */
+        printf("Word: %s, hash: %s. Required hash is %size.\n", current.get(), hash.toVector().get(), requiredHash);
 
-            const char* current = passwords[passwordPosition];
-//            DeviceSHA256
-        }
+//        DeviceVector<char> buffer(current.length(), '\0');
+//        if(nextPermutation(current, requiredHash, buffer, mutations, resultBuffer))
+//            return; /* Solution found in our thread. */
+
     }
-
-
 }
 
 #endif //HASHSELECTION_DEVICEFUNCTIONS_H
