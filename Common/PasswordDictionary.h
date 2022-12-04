@@ -13,8 +13,8 @@
 class PasswordDictionary final : public IDictionary {
 public:
     const WordArray& get() const override;
+    const std::string& getRandom() const;
     const std::string& operator[](unsigned index) const { return get()[index]; };
-    const std::string& getRandom() const;;
 
     void find(const MutationDictionary& replacements, const std::string& requiredValue, const Comparator& closure) const;
     void calculateQuantities(const MutationDictionary& replacements) const;
