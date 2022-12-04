@@ -24,7 +24,7 @@ class DeviceWord final {
     }
 public:
     DEVICE DeviceWord(const char* word)
-    : word(word), length(strlen(word)) {};
+    : word(word), length(word != nullptr ? strlen(word) : 0) {};
 
     DEVICE size_t size() const { return length; }
     DEVICE bool operator==(const DeviceWord& other) const { return strcmp(word, other.word) == 0; }

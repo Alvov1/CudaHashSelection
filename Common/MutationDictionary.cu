@@ -2,11 +2,11 @@
 
 const IDictionary::WordArray &MutationDictionary::get() const {
     static std::vector<std::string> words = {
-            { "4@^да" }, { "8ßв" }, { "[<(с" }, { "д" }, { "3&£е€" },
-            { "ƒv" }, { "6&9" }, { "#н" }, { "1|!" }, { "]" },
-            { "к<" }, { "!12£7|" }, { "м" }, { "^ทп" }, { "0Øо" },
-            { "9р" }, { "20&9" }, { "972®я" }, { "3$z§2" }, { "т7+†" },
-            { "vบ" }, { "" }, { "พ" }, { "×" }, { "jу¥" }, { "27s" }
+            /* A */ { "4@^" }, /* B */ { "86" }, /* C */ { "[<(" }, /* D */ { "" }, /* E */ { "3&" },
+            /* F */ { "v" }, /* G */ { "6&9" }, /* H */ { "#" }, /* I */ { "1|/\\!" }, /* J */ { "]}" },
+            /* K */ { "(<x" }, /* L */ { "!127|" }, /* M */ { "" }, /* N */ { "^" }, /* O */ { "0" },
+            /* P */ { "9?" }, /* Q */ { "20&9" }, /* R */ { "972" }, /* S */ { "3$z2" }, /* T */ { "7+" },
+            /* U */ { "v" }, /* V */ { "u" }, /* W */ { "v" }, /* X */ { "%" }, /* Y */ { "j" }, /* Z */ { "27s" }
     };
 
     return words;
@@ -34,10 +34,15 @@ std::string MutationDictionary::mutate(const std::string& word) const {
 
 void MutationDictionary::show() const {
     Console::cout << Console::endl << "Using such password mutations:" << Console::endl;
-    for(char letter = char('A'); letter != char('Z'); ++letter) {
+    for(char letter = char('A'); letter <= char('Z'); ++letter) {
         const auto& tVariants = this->operator[](letter);
-        if(!tVariants.empty())
+        if(!tVariants.empty()) {
             Console::cout << letter << ": " << tVariants << Console::endl;
+
+            for(auto& v: tVariants)
+                std::cout << static_cast<unsigned>(v) << " ";
+            std::cout << std::endl << std::endl;
+        }
     }
     Console::cout << Console::endl;
 }
@@ -49,28 +54,28 @@ const std::string& MutationDictionary::operator[](char key) const {
 }
 
 std::optional<std::string> MutationDictionary::backtracking(const std::string& candidate, const std::string& pattern, const Comparator& func) const {
-    std::stack<std::pair<char, int>> buffer;
-    buffer.push({candidate[0], -1 });
+    std::stack<std::pair<char, int>> stack;
+    stack.push({candidate[0], -1 });
 
-    while(!buffer.empty()) {
-        if(buffer.size() >= candidate.size()) {
-            const auto string = stackToString(buffer);
+    while(!stack.empty()) {
+        if(stack.size() >= candidate.size()) {
+            const auto string = stackToString(stack);
             if(func(string, pattern)) return { string };
 
             unsigned nextPosition = 0;
             do {
-                nextPosition = buffer.top().second + 1;
-                buffer.pop();
+                nextPosition = stack.top().second + 1;
+                stack.pop();
 
-                const auto& variants = getVariants(candidate[buffer.size()]);
+                const auto& variants = getVariants(candidate[stack.size()]);
                 if(nextPosition < variants.size()) break;
-            } while (!buffer.empty());
+            } while (!stack.empty());
 
-            const auto& variants = getVariants(candidate[buffer.size()]);
-            if(nextPosition < variants.size() || !buffer.empty())
-                buffer.push({variants[nextPosition], nextPosition});
+            const auto& variants = getVariants(candidate[stack.size()]);
+            if(nextPosition < variants.size() || !stack.empty())
+                stack.push({variants[nextPosition], nextPosition});
         } else
-            buffer.push({ candidate[buffer.size()], -1 });
+            stack.push({candidate[stack.size()], -1 });
     }
 
     return {};

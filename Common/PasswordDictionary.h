@@ -18,6 +18,8 @@ public:
 
     void find(const MutationDictionary& replacements, const std::string& requiredValue, const Comparator& closure) const;
     void calculateQuantities(const MutationDictionary& replacements) const;
+
+    static unsigned upperPower2(unsigned value);
 };
 
 #endif //HASHSELECTION_PASSWORDDICTIONARY_H

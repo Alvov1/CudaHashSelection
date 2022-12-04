@@ -8,15 +8,16 @@
 int main() {
     Hardware::checkCudaDevices();
 
-    ReplacementDictionary mutations;
+    MutationDictionary mutations;
     mutations.show();
     PasswordDictionary passwords;
     passwords.calculateQuantities(mutations);
 
-    const auto& plainPassword = passwords.getRandom();
-    Console::timer << "Using word: " << plainPassword << Console::endl;
-    const auto mutatedPassword = mutations.rearrange(plainPassword);
-    Console::timer << "Using after rearrangement: " << mutatedPassword << Console::endl;
+//    const auto& plainPassword = passwords.getRandom();
+//    Console::timer << "Using word: " << plainPassword << Console::endl;
+//    const auto mutatedPassword = mutations.mutate(plainPassword);
+//    Console::timer << "Using after rearrangement: " << mutatedPassword << Console::endl;
+    std::string mutatedPassword = "hello";
     const HostSHA256 hash(mutatedPassword.c_str(), mutatedPassword.size());
     Console::timer << "Searching for requiredHash with hash '" << hash.to_string() << "'." << Console::endl;
 
@@ -25,7 +26,10 @@ int main() {
     const ArrayOnDevice requiredHash(hash.to_string().c_str(), hash.to_string().size());
     const ArrayOnDevice placeForResult(20);
 
-    DeviceFunctions::process<<<32, 2>>>(
+    Console::timer << "Data is loaded to device." << Console::endl;
+
+    const auto dimension = PasswordDictionary::upperPower2(passwords.size());
+    DeviceFunctions::process<<<dimension, 2>>>(
             devicePasswords.getArray(),
             devicePasswords.size(),
             deviceMutations.getArray(),
