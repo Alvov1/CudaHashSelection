@@ -1,6 +1,7 @@
 #ifndef HASHSELECTION_DICTIONARY_H
 #define HASHSELECTION_DICTIONARY_H
 
+#include <stack>
 #include <vector>
 #include <string>
 #include <functional>

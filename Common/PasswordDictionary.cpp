@@ -10,11 +10,11 @@ const IDictionary::WordArray &PasswordDictionary::get() const {
     return words;
 }
 
-void PasswordDictionary::find(const ReplacementDictionary& replacements, const std::basic_string<char>& hash, const Comparator& closure) const {
+void PasswordDictionary::find(const MutationDictionary& replacements, const std::basic_string<char>& hash, const Comparator& closure) const {
     for(unsigned i = 0; i < replacements.size(); ++i) {
         const auto& current = this->operator[](i);
 
-        const auto result = replacements.enumerate(current, hash, closure);
+        const auto result = replacements.backtracking(current, hash, closure);
         if(result.has_value()) {
             Console::timer << "Found a coincidence with word " << result.value() << L"." << Console::endl;
             break;
@@ -23,7 +23,7 @@ void PasswordDictionary::find(const ReplacementDictionary& replacements, const s
     }
 }
 
-void PasswordDictionary::calculateQuantities(const ReplacementDictionary& replacements) const {
+void PasswordDictionary::calculateQuantities(const MutationDictionary& replacements) const {
     static constexpr unsigned approximateFrequency = 15000;
 
     Console::cout << "The calculations involve iterating over the following number of permutations for each word:" << Console::endl;

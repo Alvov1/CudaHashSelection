@@ -1,6 +1,6 @@
-#include "ReplacementDictionary.h"
+#include "MutationDictionary.h"
 
-const IDictionary::WordArray &ReplacementDictionary::get() const {
+const IDictionary::WordArray &MutationDictionary::get() const {
     static std::vector<std::string> words = {
             { "4@^да" }, { "8ßв" }, { "[<(с" }, { "д" }, { "3&£е€" },
             { "ƒv" }, { "6&9" }, { "#н" }, { "1|!" }, { "]" },
@@ -12,37 +12,7 @@ const IDictionary::WordArray &ReplacementDictionary::get() const {
     return words;
 }
 
-bool ReplacementDictionary::nextPermutation(const std::string& candidate,
-                     const std::string& pattern, std::string& buffer, const Comparator& func) const {
-    /* Recursion out. */
-    if(buffer.size() == candidate.size())
-        return func(buffer, pattern);
-
-    /* Recursion continue. */
-    const unsigned position = buffer.size();
-    buffer.push_back(candidate[position]);
-    if(nextPermutation(candidate, pattern, buffer, func)) return true;
-    buffer.pop_back();
-
-    const auto& tVariants = this->operator[](candidate[position]);
-    for(char tVariant : tVariants) {
-        buffer.push_back(tVariant);
-        if(nextPermutation(candidate, pattern, buffer, func)) return true;
-        buffer.pop_back();
-    }
-    return false;
-}
-
-std::optional<std::string>
-ReplacementDictionary::enumerate(const std::string &candidate, const std::string &pattern,
-                                 const ReplacementDictionary::Comparator &func) const {
-    std::string buffer; buffer.reserve(candidate.size());
-    if(nextPermutation(candidate, pattern, buffer, func))
-        return { buffer };
-    return {};
-}
-
-std::string ReplacementDictionary::rearrange(const std::string& word) const {
+std::string MutationDictionary::mutate(const std::string& word) const {
     static std::random_device dev;
     static std::mt19937 rng(dev());
     static std::uniform_int_distribution<std::mt19937::result_type> changing(0, 2);
@@ -62,7 +32,7 @@ std::string ReplacementDictionary::rearrange(const std::string& word) const {
     return result;
 }
 
-void ReplacementDictionary::show() const {
+void MutationDictionary::show() const {
     Console::cout << Console::endl << "Using such password mutations:" << Console::endl;
     for(char letter = char('A'); letter != char('Z'); ++letter) {
         const auto& tVariants = this->operator[](letter);
@@ -72,9 +42,37 @@ void ReplacementDictionary::show() const {
     Console::cout << Console::endl;
 }
 
-const std::string &ReplacementDictionary::operator[](char key) const {
+const std::string& MutationDictionary::operator[](char key) const {
     if(std::tolower(key) < 'a' || std::tolower(key) > 'z')
         return emptyWord;
     return get()[std::tolower(key) - 'a'];
+}
+
+std::optional<std::string> MutationDictionary::backtracking(const std::string& candidate, const std::string& pattern, const Comparator& func) const {
+    std::stack<std::pair<char, int>> buffer;
+    buffer.push({candidate[0], -1 });
+
+    while(!buffer.empty()) {
+        if(buffer.size() >= candidate.size()) {
+            const auto string = stackToString(buffer);
+            if(func(string, pattern)) return { string };
+
+            unsigned nextPosition = 0;
+            do {
+                nextPosition = buffer.top().second + 1;
+                buffer.pop();
+
+                const auto& variants = getVariants(candidate[buffer.size()]);
+                if(nextPosition < variants.size()) break;
+            } while (!buffer.empty());
+
+            const auto& variants = getVariants(candidate[buffer.size()]);
+            if(nextPosition < variants.size() || !buffer.empty())
+                buffer.push({variants[nextPosition], nextPosition});
+        } else
+            buffer.push({ candidate[buffer.size()], -1 });
+    }
+
+    return {};
 }
 

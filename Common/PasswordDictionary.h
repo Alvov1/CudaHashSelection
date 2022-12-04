@@ -8,7 +8,7 @@
 #include "Console.h"
 
 #include "Dictionary.h"
-#include "ReplacementDictionary.h"
+#include "MutationDictionary.h"
 
 class PasswordDictionary final : public IDictionary {
 public:
@@ -16,8 +16,8 @@ public:
     const std::string& operator[](unsigned index) const { return get()[index]; };
     const std::string& getRandom() const;;
 
-    void find(const ReplacementDictionary& replacements, const std::string& requiredValue, const Comparator& closure) const;
-    void calculateQuantities(const ReplacementDictionary& replacements) const;
+    void find(const MutationDictionary& replacements, const std::string& requiredValue, const Comparator& closure) const;
+    void calculateQuantities(const MutationDictionary& replacements) const;
 };
 
 #endif //HASHSELECTION_PASSWORDDICTIONARY_H
