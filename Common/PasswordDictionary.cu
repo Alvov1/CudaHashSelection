@@ -255,4 +255,3 @@ unsigned PasswordDictionary::upperPower2(unsigned int value) {
         result <<= 1;
     return result;
 }
-

@@ -1,15 +1,12 @@
 cmake_minimum_required(VERSION 3.22)
-project(HashSelection CUDA)
+#project(HashSelection CUDA)
+project(HashSelection)
 
 find_package(OpenSSL REQUIRED)
 set(CMAKE_CXX_STANDARD 20)
 
 include_directories(../Common ../Common/ScreenWriting)
 file (GLOB Targets * ../Common/* ../Common/ScreenWriting/*)
-
-#if (CMAKE_GENERATOR MATCHES "Ninja")
-#    set(CMAKE_CL_SHOWINCLUDES_PREFIX "Note: including file:")
-#endif()
 
 add_executable(HashSelection ${Targets})
 
