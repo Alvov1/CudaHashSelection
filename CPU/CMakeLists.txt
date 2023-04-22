@@ -5,6 +5,8 @@ project(HashSelection)
 find_package(OpenSSL REQUIRED)
 set(CMAKE_CXX_STANDARD 20)
 
+#add_subdirectory(../cryptopp-cmake-master cryptopp-cmake-master)
+
 include_directories(../Common ../Common/ScreenWriting)
 file (GLOB Targets * ../Common/* ../Common/ScreenWriting/*)
 
