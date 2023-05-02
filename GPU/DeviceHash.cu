@@ -29,6 +29,7 @@ DEVICE void DeviceSHA256::update_(unsigned char const *message, size_t len) {
     tmp_len = DeviceSHA256::BlockSize - len_;
     rem_len = len < tmp_len ? len : tmp_len;
     memcpy(&block_[len_], message, rem_len);
+
     if (len_ + len < DeviceSHA256::BlockSize) {
         len_ += len;
         return;

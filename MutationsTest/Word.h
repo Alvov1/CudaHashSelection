@@ -65,11 +65,12 @@ namespace HashSelection {
 
         /* Iterate over initial letters. Add or remove vowel letters. */
         bool previousLetterVowel = false;
-        for(unsigned i = 0; i < word.size(); ++i)
-            if(std::find(Constants::vowels.begin(), Constants::vowels.end(), initialValue[i]) != Constants::vowels.end()) {
+        for(unsigned i = 0; i < word.size(); ++i) {
+            if (std::find(Constants::vowels.begin(), Constants::vowels.end(), initialValue[i]) != Constants::vowels.end()) {
 
             } else
                 previousLetterVowel = false;
+        }
 
     }
 
