@@ -11,11 +11,11 @@
 
 class OssException;
 
-template <typename Char = char>
 class HostSHA256 final {
     std::array<unsigned char, EVP_MAX_MD_SIZE> bytes {};
     unsigned bytesLength {};
 public:
+    template <typename Char = char>
     HostSHA256(const Char* data, std::size_t length);
     [[nodiscard]] std::string to_string() const;
 };
