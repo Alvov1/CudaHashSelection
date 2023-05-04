@@ -5,9 +5,12 @@ std::wostream& operator<<(std::wostream& stream, const HashSelection::Word& word
 }
 
 int main() {
-    const HashSelection::Word word = { { 'r', 'o', 'o', 'o', 'l', 'e', 'r' }, 7 };
-    for(const auto& word2: HashSelection::foundExtensions(word))
-        std::wcout << word2 << std::endl;
+    HashSelection::Word word = {{ L'p', L'a', L's', L's', L'w', L'o', L'r', L'd' }, 8 };
+    std::function<bool(const HashSelection::Word&)> closure = [] (const HashSelection::Word& word) {
+        std::wcout << word << std::endl;
+        return false;
+    };
+    HashSelection::foundPermutations(word, closure);
 
     return 0;
 }

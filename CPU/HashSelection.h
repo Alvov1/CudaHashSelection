@@ -19,7 +19,10 @@ namespace HashSelection {
 
     std::vector<Word> readFileDictionary(const std::filesystem::path& fromLocation);
 
-    std::optional<std::string> foundPermutations(const Word& forWord, const std::function<bool(const Word&)>& onClosure);
+    using VariantsArray = std::basic_string_view<Char>;
+    const VariantsArray& getVariants(Char sym);
+
+    std::optional<Word> foundPermutations(const Word& forWord, const std::function<bool(const Word&)>& onClosure);
 
     std::vector<Word> foundExtensions(const Word& forWord);
 }

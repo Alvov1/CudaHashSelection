@@ -39,10 +39,10 @@ namespace HashSelection {
         }(fromLocation);
     }
 
-    std::optional<std::string> foundPermutations(const Word& forWord, const std::function<bool(const Word&)>& onClosure){
-        static constexpr std::array replacements = []() {
+    const VariantsArray& getVariants(Char sym) {
+        static constexpr std::array variants = [] {
             if constexpr (std::is_same<Char, char>::value)
-                return std::array<std::string_view, 26> {
+                return std::array<const std::string_view, 26> {
                         /* A */ "4@^",     /* B */ "86",      /* C */ "[<(",     /* D */ "",        /* E */ "3&",
                         /* F */ "v",       /* G */ "6&9",     /* H */ "#",       /* I */ "1|/\\!",  /* J */ "]}",
                         /* K */ "(<x",     /* L */ "!127|",   /* M */ "",        /* N */ "^",       /* O */ "0",
@@ -52,14 +52,70 @@ namespace HashSelection {
                 };
             else
                 return std::array<std::wstring_view, 26> {
-                        /* A */ L"4@^",     /* B */ L"86",      /* C */ L"[<(",     /* D */ L"",        /* E */ L"3&",
-                        /* F */ L"v",       /* G */ L"6&9",     /* H */ L"#",       /* I */ L"1|/\\!",  /* J */ L"]}",
-                        /* K */ L"(<x",     /* L */ L"!127|",   /* M */ L"",        /* N */ L"^",       /* O */ L"0",
-                        /* P */ L"9?",      /* Q */ L"20&9",    /* R */ L"972",     /* S */ L"3$z2",    /* T */ L"7+",
-                        /* U */ L"v",       /* V */ L"u",       /* W */ L"v",       /* X */ L"%",       /* Y */ L"j",
+                        /* A */ L"4@^",     /* B */ L"86",      /* C */ L"[<(",     /* D */ L"",        /* E */
+                                L"3&",
+                        /* F */ L"v",       /* G */ L"6&9",     /* H */ L"#",       /* I */ L"1|/\\!",  /* J */
+                                L"]}",
+                        /* K */ L"(<x",     /* L */ L"!127|",   /* M */ L"",        /* N */ L"^",       /* O */
+                                L"0",
+                        /* P */ L"9?",      /* Q */ L"20&9",    /* R */ L"972",     /* S */ L"3$z2",    /* T */
+                                L"7+",
+                        /* U */ L"v",       /* V */ L"u",       /* W */ L"v",       /* X */ L"%",       /* Y */
+                                L"j",
                         /* Z */ L"27s"
                 };
-        }();
+        } ();
+        static constexpr std::basic_string_view<Char> empty = [] {
+            if constexpr (std::is_same<Char, char>::value)
+                return std::string_view { "" };
+            else return std::wstring_view { L"" };
+        } ();
+        static const auto [a, z, A, Z] = [] {
+            if constexpr (std::is_same<Char, char>::value)
+                return std::tuple { 'a', 'z', 'A', 'Z' };
+            else return std::tuple { L'a', L'z', L'A', L'Z' };
+        } ();
+
+        if(a <= sym && sym <= z)
+            return variants[sym - a];
+        if(A <= sym && sym <= Z)
+            return variants[sym - A];
+        return empty;
+    }
+
+    std::optional<Word> foundPermutations(const Word& forWord, const std::function<bool(const Word&)>& onClosure){
+        const auto& [pattern, patternSize] = forWord;
+
+        std::vector<std::pair<char, short>> stack; stack.reserve(patternSize);
+        stack.emplace_back(pattern[0], -1);
+
+        while(!stack.empty()) {
+            if(stack.size() >= patternSize) {
+                const Word united = [](const std::vector<std::pair<char, short>>& stack) {
+                    Word word {}; auto& [data, size] = word;
+                    for(const auto& [sym, _]: stack)
+                        data[size++] = sym;
+                    return word;
+                } (stack);
+                if(onClosure(united)) return { united };
+
+                unsigned nextPosition = 0;
+                do {
+                    nextPosition = stack.back().second + 1;
+                    stack.pop_back();
+
+                    const auto& variants = getVariants(pattern[stack.size()]);
+                    if(nextPosition < variants.size()) break;
+                } while (!stack.empty());
+
+                const auto& variants = getVariants(pattern[stack.size()]);
+                if(nextPosition < variants.size() || !stack.empty())
+                    stack.emplace_back(variants[nextPosition], nextPosition);
+            } else
+                stack.emplace_back(pattern[stack.size()], -1);
+        }
+
+        return {};
     }
 
     std::vector<Word> foundExtensions(const Word& forWord) {
@@ -72,7 +128,7 @@ namespace HashSelection {
             }();
             return std::find(vowels.begin(), vowels.end(), sym) != vowels.end();
         };
-        const auto [pattern, patternSize] = forWord;
+        const auto& [pattern, patternSize] = forWord;
 
         /* Storing in stack (Symbol, Number of repeats in pattern, Number of repeats in current copy). */
         using Stack = std::vector<std::tuple<char, uint8_t, uint8_t>>;
