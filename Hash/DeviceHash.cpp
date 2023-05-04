@@ -124,3 +124,7 @@ std::string DeviceSHA256::to_string() const {
         s << std::setw(2) << static_cast<unsigned short>(data[i]);
     return s.str();
 }
+
+const std::array<unsigned char, 32>& DeviceSHA256::get() const {
+    return data;
+}

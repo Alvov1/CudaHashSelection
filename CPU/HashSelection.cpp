@@ -39,50 +39,6 @@ namespace HashSelection {
         }(fromLocation);
     }
 
-    const VariantsArray& getVariants(Char sym) {
-        static constexpr std::array variants = [] {
-            if constexpr (std::is_same<Char, char>::value)
-                return std::array<const std::string_view, 26> {
-                        /* A */ "4@^",     /* B */ "86",      /* C */ "[<(",     /* D */ "",        /* E */ "3&",
-                        /* F */ "v",       /* G */ "6&9",     /* H */ "#",       /* I */ "1|/\\!",  /* J */ "]}",
-                        /* K */ "(<x",     /* L */ "!127|",   /* M */ "",        /* N */ "^",       /* O */ "0",
-                        /* P */ "9?",      /* Q */ "20&9",    /* R */ "972",     /* S */ "3$z2",    /* T */ "7+",
-                        /* U */ "v",       /* V */ "u",       /* W */ "v",       /* X */ "%",       /* Y */ "j",
-                        /* Z */ "27s"
-                };
-            else
-                return std::array<std::wstring_view, 26> {
-                        /* A */ L"4@^",     /* B */ L"86",      /* C */ L"[<(",     /* D */ L"",        /* E */
-                                L"3&",
-                        /* F */ L"v",       /* G */ L"6&9",     /* H */ L"#",       /* I */ L"1|/\\!",  /* J */
-                                L"]}",
-                        /* K */ L"(<x",     /* L */ L"!127|",   /* M */ L"",        /* N */ L"^",       /* O */
-                                L"0",
-                        /* P */ L"9?",      /* Q */ L"20&9",    /* R */ L"972",     /* S */ L"3$z2",    /* T */
-                                L"7+",
-                        /* U */ L"v",       /* V */ L"u",       /* W */ L"v",       /* X */ L"%",       /* Y */
-                                L"j",
-                        /* Z */ L"27s"
-                };
-        } ();
-        static constexpr std::basic_string_view<Char> empty = [] {
-            if constexpr (std::is_same<Char, char>::value)
-                return std::string_view { "" };
-            else return std::wstring_view { L"" };
-        } ();
-        static const auto [a, z, A, Z] = [] {
-            if constexpr (std::is_same<Char, char>::value)
-                return std::tuple { 'a', 'z', 'A', 'Z' };
-            else return std::tuple { L'a', L'z', L'A', L'Z' };
-        } ();
-
-        if(a <= sym && sym <= z)
-            return variants[sym - a];
-        if(A <= sym && sym <= Z)
-            return variants[sym - A];
-        return empty;
-    }
-
     std::optional<Word> foundPermutations(const Word& forWord, const std::function<bool(const Word&)>& onClosure){
         const auto& [pattern, patternSize] = forWord;
 
@@ -97,7 +53,8 @@ namespace HashSelection {
                         data[size++] = sym;
                     return word;
                 } (stack);
-                if(onClosure(united)) return { united };
+                if(onClosure(united))
+                    return { united };
 
                 unsigned nextPosition = 0;
                 do {
@@ -132,13 +89,12 @@ namespace HashSelection {
 
         /* Storing in stack (Symbol, Number of repeats in pattern, Number of repeats in current copy). */
         using Stack = std::vector<std::tuple<char, uint8_t, uint8_t>>;
-        Stack stack;
-        stack.reserve(forWord.second);
+        Stack stack; stack.reserve(forWord.second);
 
         unsigned position = 0;
 
         /* Skipping first N non-vowel characters inside pattern. */
-        for (; !isVowel(pattern[position]); ++position)
+        for (; !isVowel(pattern[position]) && position < patternSize; ++position)
             stack.emplace_back(pattern[position], 1, 1);
 
         std::vector<Word> result;
@@ -152,8 +108,7 @@ namespace HashSelection {
                      isVowel(pattern[i]) && pattern[i] == pattern[position]; ++vowelsCount, ++i);
 
                 /* Pushing new value in stack */
-                stack.emplace_back(pattern[position], vowelsCount,
-                                   (isVowel(pattern[position]) && vowelsCount == 1) ? 2 : vowelsCount);
+                stack.emplace_back(pattern[position], vowelsCount, (isVowel(pattern[position]) && vowelsCount == 1) ? 2 : vowelsCount);
                 position += vowelsCount;
 
             } else {
@@ -183,5 +138,44 @@ namespace HashSelection {
         } while (!stack.empty());
 
         return result;
+    }
+
+    std::optional<Word> process(const std::vector<Word>& words, const Closure& onClosure) {
+        for(const auto& word: words) {
+            const auto extendedWords = foundExtensions(word);
+            for (const auto& extendedWord: extendedWords) {
+                auto option = foundPermutations(extendedWord, onClosure);
+                if (option.has_value())
+                    return option;
+            }
+        }
+        return {};
+    }
+
+    Word getRandomModification(const std::vector<Word>& fromWords) {
+        static std::mt19937 device(std::random_device {} ());
+
+        /* 1. Get random word from sequence. */
+        Word word = [&fromWords] {
+            std::uniform_int_distribution<unsigned> dist(0, fromWords.size() - 1);
+            return fromWords[dist(device)];
+        } ();
+
+        /* 2. Get random word extension. */
+        word = [&word] {
+            const auto extensions = foundExtensions(word);
+            std::uniform_int_distribution<unsigned> dist(0, extensions.size() - 1);
+            return extensions[dist(device)];
+        } ();
+
+        /* 3. Get random word permutation. */
+        [&word] {
+            std::uniform_int_distribution<unsigned> dist(0, 1);
+            for(unsigned i = 0; i < word.second; ++i)
+                for(const auto ch: getVariants(word.first[i]))
+                    if(dist(device)) word.first[i] = ch;
+        } ();
+
+        return word;
     }
 }

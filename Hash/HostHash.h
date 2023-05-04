@@ -9,23 +9,13 @@
 #include <openssl/evp.h>
 #include <openssl/err.h>
 
-class OssException;
-
 class HostSHA256 final {
-    std::array<unsigned char, EVP_MAX_MD_SIZE> bytes {};
-    unsigned bytesLength {};
+    std::array<unsigned char, 32> bytes {};
 public:
     template <typename Char = char>
     HostSHA256(const Char* data, std::size_t length);
+    const std::array<unsigned char, 32>& get() const;
     [[nodiscard]] std::string to_string() const;
-};
-
-class OssException final : public std::exception {
-    std::string message;
-public:
-    explicit OssException(std::string message)
-    : message(std::move(message) + ": " + ERR_error_string(ERR_get_error(), nullptr)) {}
-    [[nodiscard]] const char *what() const noexcept override { return message.c_str(); }
 };
 
 #endif //HASHSELECTION_HOSTHASH_H

@@ -16,6 +16,7 @@ class DeviceSHA256 final {
 public:
     template <typename Char = char>
     DeviceSHA256(const Char* input, std::size_t length);
+    const std::array<unsigned char, 32>& get() const;
     [[nodiscard]] std::string to_string() const;
 };
 
