@@ -168,13 +168,6 @@ namespace HashSelection {
         return word;
     }
 
-    Word makeWord(const std::basic_string<Char>& str) {
-        Word word; auto& [data, size] = word;
-        for(; size < str.size() && size < 32; ++size)
-            data[size] = str[size];
-        return word;
-    }
-
     unsigned long long countComplexity(const std::vector<Word>& words) {
         unsigned long long totalCount = 0;
 
