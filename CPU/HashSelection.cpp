@@ -76,15 +76,6 @@ namespace HashSelection {
     }
 
     std::vector<Word> foundExtensions(const Word& forWord) {
-        static constexpr auto isVowel = [](Char sym) {
-            static constexpr std::array vowels = [] {
-                if constexpr (std::is_same<Char, char>::value)
-                    return std::array {'a', 'e', 'i', 'o', 'u', 'y'};
-                else
-                    return std::array {L'a', L'e', L'i', L'o', L'u', L'y'};
-            }();
-            return std::find(vowels.begin(), vowels.end(), sym) != vowels.end();
-        };
         const auto& [pattern, patternSize] = forWord;
 
         /* Storing in stack (Symbol, Number of repeats in pattern, Number of repeats in current copy). */
@@ -104,8 +95,7 @@ namespace HashSelection {
 
                 /* Count the number of repetition vowels. */
                 unsigned vowelsCount = 1;
-                for (unsigned i = position + 1;
-                     isVowel(pattern[i]) && pattern[i] == pattern[position]; ++vowelsCount, ++i);
+                for (unsigned i = position + 1; isVowel(pattern[i]) && pattern[i] == pattern[position]; ++vowelsCount, ++i);
 
                 /* Pushing new value in stack */
                 stack.emplace_back(pattern[position], vowelsCount, (isVowel(pattern[position]) && vowelsCount == 1) ? 2 : vowelsCount);
@@ -144,9 +134,8 @@ namespace HashSelection {
         for(const auto& word: words) {
             const auto extendedWords = foundExtensions(word);
             for (const auto& extendedWord: extendedWords) {
-                auto option = foundPermutations(extendedWord, onClosure);
-                if (option.has_value())
-                    return option;
+                auto option2 = foundPermutations(extendedWord, onClosure);
+                if (option2.has_value()) return option2;
             }
         }
         return {};
@@ -177,5 +166,32 @@ namespace HashSelection {
         } ();
 
         return word;
+    }
+
+    Word makeWord(const std::basic_string<Char>& str) {
+        Word word; auto& [data, size] = word;
+        for(; size < str.size() && size < 32; ++size)
+            data[size] = str[size];
+        return word;
+    }
+
+    unsigned long long countComplexity(const std::vector<Word>& words) {
+        unsigned long long totalCount = 0;
+
+        for(const auto& word: words) {
+            unsigned long long wordCount = 0;
+
+            for(const auto& [data, size]: foundExtensions(word)) {
+                unsigned long long extendedWordCount = 1;
+                for (unsigned i = 0; i < size; ++i) {
+                    const auto variantsSize = getVariants(data[i]).size();
+                    extendedWordCount *= (variantsSize > 0 ? variantsSize : 1);
+                }
+                wordCount += extendedWordCount;
+            }
+            totalCount += wordCount;
+        }
+
+        return totalCount;
     }
 }

@@ -15,6 +15,16 @@ namespace HashSelection {
     /* Storing characters permutation as string-views. */
     using VariantsArray = std::basic_string_view<Char>;
     const VariantsArray& getVariants(Char sym);
+
+    static constexpr auto isVowel = [](Char sym) {
+        static constexpr std::array vowels = [] {
+            if constexpr (std::is_same<Char, char>::value)
+                return std::array {'a', 'e', 'i', 'o', 'u', 'y'};
+            else
+                return std::array {L'a', L'e', L'i', L'o', L'u', L'y'};
+        }();
+        return std::find(vowels.begin(), vowels.end(), sym) != vowels.end();
+    };
 }
 
 #endif //HASHSELECTION_WORD_H
