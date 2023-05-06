@@ -179,7 +179,7 @@ namespace HashSelection {
         return extensions;
     }
 
-    GLOBAL void foundExtensionsDevice(const Word *data) {
+    GLOBAL void foundExtensionsDevice(const Word* data, const unsigned char* requiredHash, Word* resultPlace) {
         const unsigned threadNumber = threadIdx.x + blockIdx.x * blockDim.x;
         if(threadNumber > 0) return;
 
@@ -249,10 +249,18 @@ namespace HashSelection {
         return {};
     }
 
-    std::optional<Word> runDevice(const std::vector<Word> &words, const Closure &onClosure) {
+    std::optional<Word> runDevice(const std::vector<Word> &words, const HostSHA256& hash) {
+        /* Copy data dictionary and required hash from host to device. */
         const thrust::device_vector<HashSelection::Word> deviceWords = words;
+        const thrust::device_vector<unsigned char> deviceHash =
+                std::vector<unsigned char>(hash.get().begin(), hash.get().end());
+        const thrust::device_ptr<Word> resultPlace = thrust::device_malloc<Word>(1);
 
-        foundExtensionsDevice<<<32, 32>>>(thrust::raw_pointer_cast(deviceWords.data()));
+        /* Start process with global function. */
+        foundExtensionsDevice<<<32, 32>>>(
+                thrust::raw_pointer_cast(deviceWords.data()),
+                thrust::raw_pointer_cast(deviceHash.data()),
+                thrust::raw_pointer_cast(resultPlace.get()));
         if(cudaDeviceSynchronize() != cudaSuccess)
             throw std::runtime_error("Failed.");
 
