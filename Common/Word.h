@@ -2,7 +2,11 @@
 #define HASHSELECTION_WORD_H
 
 #include <iostream>
+#include <fstream>
+#include <filesystem>
+#include <string>
 #include <array>
+#include <random>
 
 #define DEVICE __device__
 #define GLOBAL __global__
@@ -38,8 +42,8 @@ namespace HashSelection {
     using VariantsArray = std::basic_string_view<Char>;
     const VariantsArray& getVariants(Char sym);
 
-    bool isVowel(Char sym);
-    DEVICE bool isVowelDevice(Char sym);
+    /* Reads input dictionary into host array. */
+    std::vector<Word> readFileDictionary(const std::filesystem::path& fromLocation);
 }
 
 #endif //HASHSELECTION_WORD_H

@@ -6,7 +6,8 @@ set(CMAKE_CXX_STANDARD 20)
 include_directories(../Common)
 include_directories(../Hash)
 
-add_executable(HashSelection main.cu)
+file(GLOB Sources *.cpp *.cu)
+add_executable(HashSelection ${Sources})
 
 add_subdirectory(../Common Common)
 add_subdirectory(../Hash Hash)
