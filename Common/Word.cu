@@ -32,16 +32,33 @@ namespace HashSelection {
                 return std::string_view { "" };
             else return std::wstring_view { L"" };
         } ();
-        static const auto [a, z, A, Z] = [] {
+        static constexpr auto azAZ = [] {
             if constexpr (std::is_same<Char, char>::value)
                 return std::tuple { 'a', 'z', 'A', 'Z' };
             else return std::tuple { L'a', L'z', L'A', L'Z' };
-        } ();
+        } (); const auto& [a, z, A, Z] = azAZ;
 
         if(a <= sym && sym <= z)
             return variants[sym - a];
         if(A <= sym && sym <= Z)
             return variants[sym - A];
         return empty;
+    }
+
+    bool isVowel(Char sym) {
+        static constexpr std::array vowels = [] {
+            if constexpr (std::is_same<Char, char>::value)
+                return std::array {'a', 'e', 'i', 'o', 'u', 'y'};
+            else
+                return std::array {L'a', L'e', L'i', L'o', L'u', L'y'};
+        }();
+        return std::find(vowels.begin(), vowels.end(), sym) != vowels.end();
+    }
+
+    __device__ bool isVowelDevice(Char sym) {
+        if constexpr (std::is_same<Char, char>::value)
+            return (sym == 'a' || sym == 'e' || sym == 'i' || sym == 'o' || sym == 'u' || sym == 'y');
+        else
+            return (sym == L'a' || sym == L'e' || sym == L'i' || sym == L'o' || sym == L'u' || sym == L'y');
     }
 }

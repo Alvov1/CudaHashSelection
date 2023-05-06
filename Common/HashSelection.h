@@ -1,15 +1,22 @@
-#ifndef MUTATIONSTEST_HASHSELECTION_H
-#define MUTATIONSTEST_HASHSELECTION_H
+#ifndef HASHSELECTION_HASHSELECTION_H
+#define HASHSELECTION_HASHSELECTION_H
 
 #include <filesystem>
 #include <functional>
+#include <optional>
 #include <fstream>
+#include <string>
 #include <random>
 #include <array>
+#include <thrust/device_vector.h>
 
 #include "Word.h"
 
+#define DEVICE __device__
+#define GLOBAL __global__
+
 namespace HashSelection {
+    /* Reads input dictionary into host array. */
     std::vector<Word> readFileDictionary(const std::filesystem::path& fromLocation);
 
     /* Get random mutation for random word from the list. */
@@ -17,17 +24,22 @@ namespace HashSelection {
 
     /* Found word's permutations: azerty -> @s&r7y. Call closure on each. */
     using Closure = std::function<bool(const Word&)>;
-    std::optional<Word> foundPermutations(const Word& forWord, const Closure& onClosure);
+    std::optional<Word> foundPermutationsHost(const Word& forWord, const Closure &onClosure);
+    DEVICE std::optional<Word> foundPermutationsDevice(const Word& forWord, const Closure& onClosure);
 
     /* Prepare word's extensions: home -> { hoome, homee, hoomee }. */
-    std::vector<Word> foundExtensions(const Word& forWord);
+    std::vector<Word> foundExtensionsHost(const Word& forWord);
+    GLOBAL void foundExtensionsDevice(const Word* data);;
 
-    /* Make all stages all-together. */
-    std::optional<Word> process(const std::vector<Word>& words, const Closure& onClosure);
+    /* Make all stages all-together on HOST. */
+    std::optional<Word> runHost(const std::vector<Word>& words, const Closure& onClosure);
+
+    /* Makes all stages all-together on DEVICE. */
+    std::optional<Word> runDevice(const std::vector<Word>& words, const Closure& onClosure);
 
     /* Count total amount of mutations for all words. */
     unsigned long long countComplexity(const std::vector<Word>& words);
 }
 
 
-#endif //MUTATIONSTEST_HASHSELECTION_H
+#endif //HASHSELECTION_HASHSELECTION_H

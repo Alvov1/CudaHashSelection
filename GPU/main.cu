@@ -1,6 +1,7 @@
-#include <filesystem>
+#include <iostream>
 
 #include "HostHash.h"
+#include "DeviceHash.h"
 #include "TimeLogger.h"
 #include "HashSelection.h"
 
@@ -11,15 +12,13 @@ int main() {
 
     const HashSelection::Word mutation = HashSelection::getRandomModification(words);
     HashSelection::Closure closure = [&mutation] (const HashSelection::Word& forWord) {
-        static const HostSHA256 hash { mutation.first.data(), mutation.second * sizeof(HashSelection::Char) };
-        const HostSHA256 another(forWord.first.data(), forWord.second * sizeof(HashSelection::Char));
-
+        static const HostSHA256 hash { mutation.data, mutation.size * sizeof(HashSelection::Char) };
+        const HostSHA256 another(forWord.data, forWord.size * sizeof(HashSelection::Char));
         return std::memcmp(hash.get().data(), another.get().data(), 32) == 0;
     };
     Time::cout << "Chosen word: " << mutation << Time::endl;
 
-    const auto value = HashSelection::process(words, closure);
-    if(value.has_value()) Time::cout << "Completed: " << *value << Time::endl;
-        else Time::cout << "Not found." << Time::endl;
+    HashSelection::runDevice(words, closure);
+
     return 0;
 }

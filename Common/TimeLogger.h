@@ -23,7 +23,7 @@ namespace HashSelection {
 
     template <typename T>
     TimeLogger& HashSelection::TimeLogger::operator<<(const T& msg) {
-        const auto duration = duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - begin).count();
+        const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - begin).count();
         if constexpr (std::is_same<Char, char>::value) {
             if(newLine) {
                 std::cout << '[' << duration << " ms ] " << msg;
@@ -41,8 +41,8 @@ namespace HashSelection {
     template <>
     inline TimeLogger& HashSelection::TimeLogger::operator<<<Time::Endl>(const Time::Endl& msg) {
         if constexpr (std::is_same<Char, char>::value)
-            std::cout.write("\n", 1);
-        else std::wcout.write(L"\n", 1);
+            std::cout << std::endl;
+        else std::wcout << std::endl;
         newLine = true;
         return *this;
     }
