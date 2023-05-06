@@ -11,13 +11,8 @@ namespace HashSelection {
     GLOBAL void foundPermutationsDevice(const Word *forWord, const unsigned char *withHash) {
         const unsigned threadNumber = threadIdx.x + blockIdx.x * blockDim.x;
         if (threadNumber > 127) return;
-    }
 
-    GLOBAL void foundExtensionsDevice(const Word *data, ExtensionList *extensionsTotal) {
-        const unsigned threadNumber = threadIdx.x + blockIdx.x * blockDim.x;
-        if (threadNumber > 127) return;
-
-        const auto &[pattern, patternSize] = data[threadNumber];
+        const auto &[pattern, patternSize] = forWord[threadNumber];
 
         struct Stack final {
             struct StackElem final {
@@ -28,8 +23,8 @@ namespace HashSelection {
 
             DEVICE uint8_t
             push(Char
-            sym,
-            short amount
+                 sym,
+                 short amount
             ) {
                 if (position + 1 < WordSize)
                     buffer[position] = {sym, amount};
@@ -59,9 +54,16 @@ namespace HashSelection {
 
         while (!stack.empty()) {
             if (stack.position >= patternSize) {
+                [&withHash] (const Word& word) {
 
+                } (stack.toWord());
             }
         }
+    }
+
+    GLOBAL void foundExtensionsDevice(const Word *data, ExtensionList *extensionsTotal) {
+        const unsigned threadNumber = threadIdx.x + blockIdx.x * blockDim.x;
+        if (threadNumber > 127) return;
 
         ExtensionList &currentList = extensionsTotal[threadNumber];
 

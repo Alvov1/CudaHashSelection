@@ -1,4 +1,4 @@
-#include "HashSelection.h"
+#include "Utility.h"
 
 namespace HashSelection {
     Word getRandomModification(const std::vector<Word>& fromWords) {

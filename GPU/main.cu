@@ -4,6 +4,7 @@
 #include "DeviceHash.h"
 #include "TimeLogger.h"
 #include "HashSelection.h"
+#include "Utility.h"
 
 int main() {
     const std::filesystem::path dictionaryLocation("../../Dictionaries/128.txt");
@@ -16,7 +17,9 @@ int main() {
     } ();
     Time::cout << "Chosen word with hash " << hash.to_string() << Time::endl;
 
-    HashSelection::runDevice(words, hash);
+    const auto value = HashSelection::runDevice(words, hash);
+    if(value.has_value()) Time::cout << "Completed: " << *value << Time::endl;
+        else Time::cout << "Not found." << Time::endl;
 
     return 0;
 }

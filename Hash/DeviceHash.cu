@@ -1,30 +1,30 @@
 #include "DeviceHash.h"
 
 namespace Substitutions {
-    u32 rotateRight(u32 value, u32 bits) {
+    DEVICE u32 rotateRight(u32 value, u32 bits) {
         return (value >> bits) | (value << (32 - bits));
     }
 
-    u32 choose(u32 first, u32 second, u32 third) {
+    DEVICE u32 choose(u32 first, u32 second, u32 third) {
         return (first & second) ^ (~first & third);
     }
 
-    u32 majority(u32 first, u32 second, u32 third) {
+    DEVICE u32 majority(u32 first, u32 second, u32 third) {
         return (first & (second | third)) | (second & third);
     }
 
-    u32 sig0(u32 value) {
+    DEVICE u32 sig0(u32 value) {
         return rotateRight(value, 7) ^ rotateRight(value, 18) ^ (value >> 3);
     }
 
-    u32 sig1(u32 value) {
+    DEVICE u32 sig1(u32 value) {
         return rotateRight(value, 17) ^ rotateRight(value, 19) ^ (value >> 10);
     }
 }
 
 template <typename Char>
-DeviceSHA256::DeviceSHA256(const Char* input, std::size_t length) {
-    std::array<u32, 8> state = {
+DEVICE DeviceSHA256::DeviceSHA256(const Char* input, std::size_t length) {
+    u32 state[8] = {
             0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
             0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
     };
@@ -49,30 +49,31 @@ DeviceSHA256::DeviceSHA256(const Char* input, std::size_t length) {
 
     if(blockLen > 55) {
         transform(state);
-        std::fill(data.begin(), data.begin() + 56, 0);
+        memset(data, 0, 32 * sizeof(unsigned char));
+//        std::fill(data.begin(), data.begin() + 56, 0);
     }
 
     bitLen += blockLen * 8;
-    data[63] = bitLen;
-    data[62] = bitLen >> 8;
-    data[61] = bitLen >> 16;
-    data[60] = bitLen >> 24;
-    data[59] = bitLen >> 32;
-    data[58] = bitLen >> 40;
-    data[57] = bitLen >> 48;
-    data[56] = bitLen >> 56;
+//    data[63] = bitLen;
+//    data[62] = bitLen >> 8;
+//    data[61] = bitLen >> 16;
+//    data[60] = bitLen >> 24;
+//    data[59] = bitLen >> 32;
+//    data[58] = bitLen >> 40;
+//    data[57] = bitLen >> 48;
+//    data[56] = bitLen >> 56;
     transform(state);
 
     for(u8 i = 0; i < 4; ++i)
         for(u8 j = 0; j < 8; ++j)
             data[i + j * 4] = (state[j] >> (24 - i * 8)) & 0x0000'00ff;
 }
-template DeviceSHA256::DeviceSHA256(const char* data, std::size_t length);
-template DeviceSHA256::DeviceSHA256(const wchar_t* data, std::size_t length);
+template DEVICE DeviceSHA256::DeviceSHA256(const char* data, std::size_t length);
+template DEVICE DeviceSHA256::DeviceSHA256(const wchar_t* data, std::size_t length);
 
-void DeviceSHA256::transform(std::array<u32, 8>& state) {
-    std::array<u32, 64> m {};
-    std::array<u32, 8> tState {};
+DEVICE void DeviceSHA256::transform(u32* state) {
+    u32 m[64] {};
+    u32 tState[8] {};
 
     for(u8 i = 0, j = 0; i < 16; ++i, j += 4)
         m[i] = (data[j] << 24) | (data[j + 1] << 16) | (data[j + 2] << 8) | (data[j + 3]);
@@ -116,15 +117,6 @@ void DeviceSHA256::transform(std::array<u32, 8>& state) {
         state[i] += tState[i];
 }
 
-std::string DeviceSHA256::to_string() const {
-    std::stringstream s;
-    s << std::setfill('0') << std::hex;
-
-    for(uint8_t i = 0 ; i < 32 ; i++)
-        s << std::setw(2) << static_cast<unsigned short>(data[i]);
-    return s.str();
-}
-
-const std::array<unsigned char, 32>& DeviceSHA256::get() const {
+const unsigned char* DEVICE DeviceSHA256::get() const {
     return data;
 }

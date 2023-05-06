@@ -5,7 +5,10 @@
 #include <thrust/device_ptr.h>
 #include <thrust/device_malloc.h>
 #include <thrust/device_vector.h>
+
+#include "Word.h"
 #include "HostHash.h"
+#include "TimeLogger.h"
 
 #define DEVICE __device__
 #define GLOBAL __global__
