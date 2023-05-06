@@ -30,11 +30,11 @@ template HostSHA256::HostSHA256(const wchar_t* data, size_t length);
 
 std::string HostSHA256::to_string() const {
     std::stringstream ss;
-    for (unsigned i = 0; i < SHA256DigestLength; ++i)
+    for (unsigned i = 0; i < Sha256DigestLength; ++i)
         ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(bytes[i]);
     return ss.str();
 }
 
-const std::array<unsigned char, SHA256DigestLength>& HostSHA256::get() const {
+const std::array<unsigned char, HostSHA256::Sha256DigestLength>& HostSHA256::get() const {
     return bytes;
 }

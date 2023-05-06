@@ -31,52 +31,50 @@ DEVICE DeviceSHA256::DeviceSHA256(const Char* input, std::size_t length) {
     u32 blockLen {};
     u64 bitLen {};
 
+    unsigned char block[Sha256BlockLength] {};
+
     for(u32 i = 0; i < length; ++i) {
-        data[blockLen++] = input[i];
-        if(blockLen == 64) {
-            transform(state);
-            bitLen += 512;
+        block[blockLen++] = input[i];
+        if(blockLen == Sha256BlockLength) {
+            transform(state, block);
+            bitLen += Sha256BlockLength * 8;
             blockLen = 0;
         }
     }
 
     u64 position = blockLen;
-    u8 end = blockLen < 56 ? 56 : 64;
+    u8 end = blockLen < Sha256BlockLength - 8 ? Sha256BlockLength - 8 : Sha256BlockLength;
 
-    data[position++] = 0x80;
+    block[position++] = 0x80;
     for(; position < end; ++position)
-        data[position] = 0x00;
+        block[position] = 0x00;
 
-    if(blockLen > 55) {
-        transform(state);
-        memset(data, 0, 32 * sizeof(unsigned char));
-//        std::fill(data.begin(), data.begin() + 56, 0);
+    if(blockLen + 9 > Sha256BlockLength) {
+        transform(state, block);
+        memset(block, 0, (Sha256BlockLength - 8) * sizeof(unsigned char));
     }
 
     bitLen += blockLen * 8;
-//    data[63] = bitLen;
-//    data[62] = bitLen >> 8;
-//    data[61] = bitLen >> 16;
-//    data[60] = bitLen >> 24;
-//    data[59] = bitLen >> 32;
-//    data[58] = bitLen >> 40;
-//    data[57] = bitLen >> 48;
-//    data[56] = bitLen >> 56;
-    transform(state);
+    for(unsigned i = 1; i < 9; ++i)
+        block[Sha256BlockLength - i] = bitLen >> (i - 1) * 8;
+
+    transform(state, block);
 
     for(u8 i = 0; i < 4; ++i)
         for(u8 j = 0; j < 8; ++j)
-            data[i + j * 4] = (state[j] >> (24 - i * 8)) & 0x0000'00ff;
+            block[i + j * 4] = (state[j] >> (24 - i * 8)) & 0x0000'00ff;
+
+    for(u8 i = 0; i < Sha256DigestLength; ++i) data[i] = block[i];
 }
 template DEVICE DeviceSHA256::DeviceSHA256(const char* data, std::size_t length);
 template DEVICE DeviceSHA256::DeviceSHA256(const wchar_t* data, std::size_t length);
 
-DEVICE void DeviceSHA256::transform(u32* state) {
+void DEVICE DeviceSHA256::transform(u32* state, unsigned char* block) {
     u32 m[64] {};
     u32 tState[8] {};
 
     for(u8 i = 0, j = 0; i < 16; ++i, j += 4)
-        m[i] = (data[j] << 24) | (data[j + 1] << 16) | (data[j + 2] << 8) | (data[j + 3]);
+        m[i] = (block[j] << 24) | (block[j + 1] << 16) | (block[j + 2] << 8) | (block[j + 3]);
 
     for(u8 i = 16; i < 64; ++i)
         m[i] = Substitutions::sig1(m[i - 2]) + m[i - 7] + Substitutions::sig0(m[i - 15]) + m[i - 16];
@@ -117,6 +115,6 @@ DEVICE void DeviceSHA256::transform(u32* state) {
         state[i] += tState[i];
 }
 
-const unsigned char* DEVICE DeviceSHA256::get() const {
+DEVICE const unsigned char* DeviceSHA256::get() const {
     return data;
 }
