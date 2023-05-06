@@ -1,4 +1,5 @@
 #include "HashSelection.h"
+#include "TimeLogger.h"
 
 namespace HashSelection {
     std::vector<Word> readFileDictionary(const std::filesystem::path& fromLocation) {
@@ -122,18 +123,47 @@ namespace HashSelection {
         return {};
     }
 
+    DEVICE std::optional<Word> foundPermutationsDevice(const Word *forWord, const unsigned char *withHash) {
+        ;
+    }
+
     std::vector<Word> foundExtensionsHost(const Word& forWord) {
         const auto& [pattern, patternSize] = forWord;
 
         /* Storing in stack (Symbol, Number of repeats in pattern, Number of repeats in current copy). */
-        using Stack = std::array<std::tuple<Char, uint8_t, uint8_t>, WordSize>;
-        Stack stack {}; unsigned stackPosition {};
+        struct Stack final {
+            struct StackElem final {
+                Char sym {}; uint8_t reps {}, repsNow {};
+            } buffer[WordSize] {};
+            uint8_t position {};
+
+            uint8_t push(Char sym, uint8_t reps, uint8_t repsNow) {
+                if(position + 1 < WordSize)
+                    buffer[position] = { sym, reps, repsNow };
+                return ++position;
+            }
+            Word toWord() const {
+                Word result {};
+                for(uint8_t i = 0; i < position; ++i) {
+                    const StackElem& elem = buffer[i];
+                    for (uint8_t j = 0; j < elem.repsNow && result.size < WordSize; ++j)
+                        result.data[result.size++] = elem.sym;
+                }
+                return result;
+            }
+            StackElem pop() {
+                if(position > 0)
+                    return buffer[--position];
+                return buffer[0];
+            }
+            bool empty() const { return position == 0; }
+        } stack;
 
         unsigned position = 0;
 
         /* Skipping first N non-vowel characters inside pattern. */
         for (; !isVowel(pattern[position]) && position < patternSize; ++position)
-            stack[stackPosition++] = { pattern[position], 1, 1 };
+            stack.push(pattern[position], 1, 1);
 
         std::vector<Word> extensions;
 
@@ -141,60 +171,83 @@ namespace HashSelection {
             if (position < patternSize) {
 
                 /* Count the number of repetition vowels. */
-                unsigned vowelsCount = 1;
+                uint8_t vowelsCount = 1;
                 for (unsigned i = position + 1; isVowel(pattern[i]) && pattern[i] == pattern[position]; ++vowelsCount, ++i);
 
                 /* Pushing new value in stack */
-                stack[stackPosition++] = {
+                stack.push(
                         pattern[position],
                         vowelsCount,
                         (isVowel(pattern[position]) && vowelsCount == 1) ? 2 : vowelsCount
-                };
+                );
                 position += vowelsCount;
 
             } else {
 
                 /* Found new pattern. Pushing into buffer. */
-                [](Stack& stack, std::vector<Word>& results, unsigned len) {
-                    auto& [tData, tSize] = results.emplace_back();
-                    for (const auto& [sym, _, reps]: stack)
-                        for (unsigned i = 0; i < reps && tSize < WordSize; ++i)
-                            tData[tSize++] = sym;
-                }(stack, extensions, patternSize);
+                extensions.push_back(stack.toWord());
 
                 /* Popping values from the stack until it's empty or another vowel is found. */
-                Char ch = 0; uint8_t reps = 0, repsNow = 0;
+                Stack::StackElem current {};
                 do {
-                    std::tie(ch, reps, repsNow) = stack.back();
-                    --stackPosition; position -= reps;
-                } while (stackPosition != 0 && repsNow < 2);
+                    current = stack.pop();
+                    position -= current.reps;
+                } while (!stack.empty() && current.repsNow < 2);
 
-                if (repsNow-- > 1)
-                    stack[stackPosition++] = { ch, reps, repsNow };
-                position += reps;
+                if (current.repsNow-- > 1)
+                    stack.push(current.sym, current.reps, current.repsNow);
+                position += current.reps;
 
             }
-        } while (stackPosition != 0);
+        } while (!stack.empty());
 
         return extensions;
     }
 
-    GLOBAL void foundExtensionsDevice(const Word* data, const unsigned char* requiredHash, Word* resultPlace) {
+    GLOBAL void foundExtensionsDevice(const Word* data, ExtensionList* extensionsTotal) {
         const unsigned threadNumber = threadIdx.x + blockIdx.x * blockDim.x;
-        if(threadNumber > 0) return;
+        if(threadNumber > 127) {
+            printf("Bad thread number %d\n", threadNumber);
+            return;
+        }
 
-        Word extensions[WordSize]; unsigned foundExtensions = 0;
+        ExtensionList& currentList = extensionsTotal[threadNumber];
 
-        [&extensions, &foundExtensions](const Word& word){
-            const auto& [pattern, patternSize] = word;
+        [&currentList](const Word& forWord) {
+            const auto& [pattern, patternSize] = forWord;
 
-            struct StackElem { Char sym {}; uint8_t reps {}, repsNow {}; };
-            StackElem stack[WordSize]; unsigned stackPosition{};
+            struct Stack final {
+                struct StackElem final {
+                    Char sym {}; uint8_t reps {}, repsNow {};
+                } buffer[WordSize] {};
+                uint8_t position {};
+
+                DEVICE uint8_t push(Char sym, uint8_t reps, uint8_t repsNow) {
+                    if(position + 1 < WordSize)
+                        buffer[position] = { sym, reps, repsNow };
+                    return ++position;
+                }
+                DEVICE Word toWord() const {
+                    Word result {};
+                    for(uint8_t i = 0; i < position; ++i) {
+                        const StackElem& elem = buffer[i];
+                        for (uint8_t j = 0; j < elem.repsNow && result.size < WordSize; ++j)
+                            result.data[result.size++] = elem.sym;
+                    }
+                    return result;
+                }
+                DEVICE StackElem pop() {
+                    if(position > 0)
+                        return buffer[--position];
+                    return buffer[0];
+                }
+                DEVICE bool empty() const { return position == 0; }
+            } stack;
 
             unsigned position = 0;
 
             for (; !isVowelDevice(pattern[position]) && position < patternSize; ++position)
-                stack[stackPosition++] = {pattern[position], 1, 1};
+                stack.push(pattern[position], 1, 1);
 
             do {
                 if (position < patternSize) {
@@ -203,39 +256,65 @@ namespace HashSelection {
                     for (unsigned i = position + 1; isVowelDevice(pattern[i]) && pattern[i] == pattern[position]; ++vowelsCount, ++i);
 
                     /* Pushing new value in stack */
-                    stack[stackPosition++] = {
+                    stack.push(
                             pattern[position],
                             vowelsCount,
                             (isVowelDevice(pattern[position]) && vowelsCount == 1) ? static_cast<uint8_t>(2) : vowelsCount
-                    };
+                    );
                     position += vowelsCount;
                 } else {
-                    /* Found new pattern. Pushing into buffer. */
-                    [&stack, &extensions, &foundExtensions] (unsigned len) {
-                        auto& [tData, tSize] = extensions[foundExtensions++];
-                        for(const auto& [sym, _, repsNow]: stack)
-                            for(unsigned i = 0; i < repsNow && tSize < WordSize; ++i)
-                                tData[tSize++] = sym;
-                    } (patternSize);
+                    /* Found new forWord. Pushing into buffer. */
+                    currentList.push(stack.toWord());
 
-                    Char ch = 0; uint8_t reps = 0, repsNow = 0;
+                    Stack::StackElem current {};
                     do {
-                        ch = stack[stackPosition - 1].sym;
-                        reps = stack[stackPosition - 1].reps;
-                        repsNow = stack[stackPosition - 1].repsNow;
-                        --stackPosition; position -= reps;
-                    } while (stackPosition != 0 && repsNow < 2);
+                        current = stack.pop();
+                        position -= current.reps;
+                    } while (!stack.empty() && current.repsNow < 2);
 
-                    if (repsNow-- > 1)
-                        stack[stackPosition++] = { ch, reps, repsNow };
-                    position += reps;
+                    if (current.repsNow-- > 1)
+                        stack.push(current.sym, current.reps, current.repsNow);
+                    position += current.reps;
                 }
-            } while (stackPosition != 0);
+            } while (!stack.empty());
 
-        } (data[29]);
+        } (data[threadNumber]);
+    }
 
-        for(unsigned i = 0; i < foundExtensions; ++i)
-            printf("Found extension: %s\n", extensions[i].data);
+    GLOBAL void show(const ExtensionList* expressions) {
+        const unsigned threadNumber = threadIdx.x + blockIdx.x * blockDim.x;
+        if(threadNumber > 0) return;
+
+        std::size_t count = 0;
+        for(unsigned i = 0; i < 128; ++i) {
+            const ExtensionList& currentList = expressions[i];
+            count += currentList.foundExtensions;
+        }
+        printf("Extensions: %d\n", count);
+    }
+
+    std::optional<Word> runDevice(const std::vector<Word> &words, const HostSHA256& hash) {
+        /* Copy data dictionary and required hash from host to device. */
+        const thrust::device_vector<HashSelection::Word> deviceWords = words;
+        thrust::device_vector<HashSelection::ExtensionList> deviceExtensions(words.size());
+        Time::cout << "Device memory allocated." << Time::endl;
+
+        /* Start process with global function. */
+        foundExtensionsDevice<<<8, 16>>>(
+                thrust::raw_pointer_cast(deviceWords.data()),
+                thrust::raw_pointer_cast(deviceExtensions.data()));
+        if(cudaDeviceSynchronize() != cudaSuccess)
+            throw std::runtime_error("Failed.");
+
+        show<<<4, 4>>>(thrust::raw_pointer_cast(deviceExtensions.data()));
+        if(cudaDeviceSynchronize() != cudaSuccess)
+            throw std::runtime_error("Failed.");
+
+//        const thrust::device_vector<unsigned char> deviceHash =
+//                std::vector<unsigned char>(hash.get().begin(), hash.get().end());
+//        const thrust::device_ptr<Word> resultPlace = thrust::device_malloc<Word>(1);
+
+        return {};
     }
 
     std::optional<Word> runHost(const std::vector<Word>& words, const Closure& onClosure) {
@@ -246,24 +325,6 @@ namespace HashSelection {
                 if (option2.has_value()) return option2;
             }
         }
-        return {};
-    }
-
-    std::optional<Word> runDevice(const std::vector<Word> &words, const HostSHA256& hash) {
-        /* Copy data dictionary and required hash from host to device. */
-        const thrust::device_vector<HashSelection::Word> deviceWords = words;
-        const thrust::device_vector<unsigned char> deviceHash =
-                std::vector<unsigned char>(hash.get().begin(), hash.get().end());
-        const thrust::device_ptr<Word> resultPlace = thrust::device_malloc<Word>(1);
-
-        /* Start process with global function. */
-        foundExtensionsDevice<<<32, 32>>>(
-                thrust::raw_pointer_cast(deviceWords.data()),
-                thrust::raw_pointer_cast(deviceHash.data()),
-                thrust::raw_pointer_cast(resultPlace.get()));
-        if(cudaDeviceSynchronize() != cudaSuccess)
-            throw std::runtime_error("Failed.");
-
         return {};
     }
 }

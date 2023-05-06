@@ -30,7 +30,7 @@ namespace HashSelection {
     /* Found word's permutations: azerty -> @s&r7y. Call closure on each. */
     using Closure = std::function<bool(const Word&)>;
     std::optional<Word> foundPermutationsHost(const Word& forWord, const Closure &onClosure);
-    DEVICE std::optional<Word> foundPermutationsDevice(const Word& forWord, const Word& withHash);
+    DEVICE std::optional<Word> foundPermutationsDevice(const Word* forWord, const unsigned char* withHash);
 
     /* Prepare word's extensions: home -> { hoome, homee, hoomee }. */
     std::vector<Word> foundExtensionsHost(const Word& forWord);

@@ -6,7 +6,7 @@
 #include "HashSelection.h"
 
 int main() {
-    const std::filesystem::path dictionaryLocation("../../Dictionaries/100.txt");
+    const std::filesystem::path dictionaryLocation("../../Dictionaries/128.txt");
     const auto words = HashSelection::readFileDictionary(dictionaryLocation);
     Time::cout << "Loaded dictionary. Complexity: " << HashSelection::countComplexity(words) << Time::endl;
 
