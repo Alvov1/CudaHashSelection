@@ -3,7 +3,7 @@
 #include "HostHash.h"
 #include "TimeLogger.h"
 #include "HashSelectionHost.h"
-#include "Utility.h"
+#include "../Common/Utility.h"
 
 int main() {
     const std::filesystem::path dictionaryLocation("../../Dictionaries/128.txt");
@@ -12,8 +12,8 @@ int main() {
 
     const HashSelection::Word mutation = HashSelection::getRandomModification(words);
     HashSelection::Closure closure = [&mutation] (const HashSelection::Word& forWord) {
-        static const HostSHA256 hash { mutation.data, mutation.size * sizeof(HashSelection::Char) };
-        const HostSHA256 another(forWord.data, forWord.size * sizeof(HashSelection::Char));
+        static const Hash::HostSHA256 hash { mutation.data, mutation.size * sizeof(HashSelection::Char) };
+        const Hash::HostSHA256 another(forWord.data, forWord.size * sizeof(HashSelection::Char));
 
         return std::memcmp(hash.get().data(), another.get().data(), 32) == 0;
     };

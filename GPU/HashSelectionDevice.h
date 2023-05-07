@@ -9,8 +9,8 @@
 #include <thrust/device_vector.h>
 
 #include "Word.h"
+#include "Utility.h"
 #include "TimeLogger.h"
-
 #include "HostHash.h"
 #include "DeviceHash.h"
 
@@ -18,16 +18,11 @@
 #define GLOBAL __global__
 
 namespace HashSelection {
-    DEVICE bool isVowelDevice(Char sym);
-
-    GLOBAL void foundPermutationsDevice(const ExtensionList* words, const unsigned char* withHash);
+    GLOBAL void foundPermutationsDevice(const ExtensionList* words, const unsigned char *withHash, Word* resultPlace);
 
     GLOBAL void foundExtensionsDevice(const Word* data);
 
-    /* Makes all stages all-together on DEVICE. */
     std::optional<Word> runDevice(const std::vector<Word>& words, const Hash::HostSHA256& forHash);
-
-    GLOBAL void test();
 }
 
 #endif //HASHSELECTION_HASHSELECTIONDEVICE_H

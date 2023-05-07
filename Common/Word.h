@@ -38,10 +38,6 @@ namespace HashSelection {
         }
     };
 
-    /* Storing characters permutation as string-views. */
-    using VariantsArray = std::basic_string_view<Char>;
-    const VariantsArray& getVariants(Char sym);
-
     /* Reads input dictionary into host array. */
     std::vector<Word> readFileDictionary(const std::filesystem::path& fromLocation);
 }

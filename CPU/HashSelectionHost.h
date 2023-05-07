@@ -6,6 +6,7 @@
 
 #include "HostHash.h"
 #include "Word.h"
+#include "TimeLogger.h"
 
 namespace HashSelection {
     /* Found word's permutations: azerty -> @s&r7y. Call closure on each. */

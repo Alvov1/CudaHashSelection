@@ -1,18 +1,11 @@
 #include "HashSelectionDevice.h"
 
 namespace HashSelection {
-    DEVICE bool isVowelDevice(Char sym) {
-        if constexpr (std::is_same<Char, char>::value)
-        return (sym == 'a' || sym == 'e' || sym == 'i' || sym == 'o' || sym == 'u' || sym == 'y');
-        else
-        return (sym == L'a' || sym == L'e' || sym == L'i' || sym == L'o' || sym == L'u' || sym == L'y');
-    }
-
     GLOBAL void foundPermutationsDevice(const ExtensionList* words, const unsigned char *withHash, Word* resultPlace) {
         const unsigned threadNumber = threadIdx.x + blockIdx.x * blockDim.x;
         if (threadNumber > 127) return;
 
-        const auto &[pattern, patternSize] = words[threadNumber];
+        const auto &[extensions, foundExtensions] = words[threadNumber];
 
         struct Stack final {
             struct StackElem final {
@@ -20,45 +13,60 @@ namespace HashSelection {
                 short amount{};
             } buffer[WordSize];
             uint8_t position{};
-
-            DEVICE uint8_t
-            push(Char
-                 sym,
-                 short amount
-            ) {
+            DEVICE uint8_t push(Char sym, short amount) {
                 if (position + 1 < WordSize)
                     buffer[position] = {sym, amount};
                 return ++position;
             }
-
-            DEVICE StackElem
-
-            pop() {
+            DEVICE StackElem pop() {
                 if (position > 0)
                     return buffer[--position];
                 return buffer[0];
             }
-
-            DEVICE bool empty() const { return position == 0; }
-
-            DEVICE Word
-
-            toWord() const {
+            DEVICE Word toWord() const {
                 Word result{};
                 for (uint8_t i = 0; i < position; ++i)
                     result.data[result.size++] = buffer[i].sym;
                 return result;
             }
+            DEVICE bool empty() const { return position == 0; }
         } stack;
-        stack.push(pattern[0], -1);
 
-        while (!stack.empty()) {
-            if (stack.position >= patternSize) {
-                [&withHash] (const Word& word) {
+        for(unsigned i = 0; i < foundExtensions; ++i) {
+            const auto& [pattern, patternSize] = extensions[i];
 
-                } (stack.toWord());
+            stack.push(pattern[0], -1);
+
+            while (!stack.empty()) {
+                if (stack.position >= patternSize) {
+                    const bool found = [&withHash] (const Word &word) {
+                        Hash::DeviceSHA256 hash(word.data, word.size * sizeof(Char));
+                        for(unsigned i = 0; i < 32; ++i)
+                            if(withHash[i] != hash.get()[i]) return false;
+
+                        /* Found coincidence. */
+                        printf("Found coincidence for word: %s\n", word.data); return true;
+                    } (stack.toWord());
+                    if(found) return;
+
+                    Stack::StackElem current {};
+                    do {
+                        current = stack.pop();
+                        const auto& variants = getVariantsDevice(pattern[stack.position]);
+                        if(current.amount + 1 < variants.size) break;
+                    } while (!stack.empty());
+
+                    const auto& variants = getVariantsDevice(pattern[stack.position]);
+                    if(current.amount + 1 < variants.size || !stack.empty())
+                        stack.push(variants[current.amount + 1], -1);
+                } else
+                    stack.push(pattern[stack.position], -1);
             }
+
+            stack.position = 0;
         }
+
+        printf("Thread %d completed.\n", threadNumber);
     }
 
     GLOBAL void foundExtensionsDevice(const Word* words, ExtensionList *extensionsTotal) {
@@ -118,15 +126,14 @@ namespace HashSelection {
                 if (position < patternSize) {
                     /* Count the number of repetition vowels. */
                     uint8_t vowelsCount = 1;
-                    for (unsigned i = position + 1;
-                         isVowelDevice(pattern[i]) && pattern[i] == pattern[position]; ++vowelsCount, ++i);
+                    for (unsigned i = position + 1; isVowelDevice(pattern[i]) && pattern[i] == pattern[position]; ++vowelsCount, ++i);
 
                     /* Pushing new value in stack */
                     stack.push(
                             pattern[position],
                             vowelsCount,
                             (isVowelDevice(pattern[position]) && vowelsCount == 1) ? static_cast<uint8_t>(2)
-                                                                                   : vowelsCount
+                                                                             : vowelsCount
                     );
                     position += vowelsCount;
                 } else {
@@ -155,8 +162,8 @@ namespace HashSelection {
             Time::cout << "Dicionary loaded onto device and space for extensions is allocated." << Time::endl;
 
             foundExtensionsDevice<<<8, 16>>>(
-                    thrust::raw_pointer_cast(deviceWords.data()),
-                    thrust::raw_pointer_cast(deviceExtensions.data()));
+                    thrust::raw_pointer_cast(deviceWords.data()),             /* Words dictionary. */
+                    thrust::raw_pointer_cast(deviceExtensions.data())); /* Placeholder for extensions. */
             if (cudaSuccess != cudaDeviceSynchronize())
                 throw std::runtime_error("Founding extensions failed.");
 
@@ -173,8 +180,9 @@ namespace HashSelection {
             thrust::device_vector<Word> deviceResult(1);
 
             foundPermutationsDevice<<<8, 16>>>(
-                    thrust::raw_pointer_cast(deviceExtensions.data()),
-                    thrust::raw_pointer_cast(deviceHashPattern.data()));
+                    thrust::raw_pointer_cast(deviceExtensions.data()),        /* Extensions dictionary. */
+                    thrust::raw_pointer_cast(deviceHashPattern.data()),     /* Required digest value. */
+                    thrust::raw_pointer_cast(deviceResult.data()));        /* Placeholder for result. */
             if (cudaSuccess != cudaDeviceSynchronize())
                 throw std::runtime_error("Founding permutations failed.");
 

@@ -1,5 +1,4 @@
 #include "HashSelectionHost.h"
-#include "TimeLogger.h"
 
 namespace HashSelection {
     std::optional<Word> foundPermutationsHost(const Word& forWord, const Closure &onClosure) {
@@ -24,11 +23,11 @@ namespace HashSelection {
                     nextPosition = stack.back().second + 1;
                     stack.pop_back();
 
-                    const auto& variants = getVariants(pattern[stack.size()]);
+                    const auto& variants = getVariantsHost(pattern[stack.size()]);
                     if(nextPosition < variants.size()) break;
                 } while (!stack.empty());
 
-                const auto& variants = getVariants(pattern[stack.size()]);
+                const auto& variants = getVariantsHost(pattern[stack.size()]);
                 if(nextPosition < variants.size() || !stack.empty())
                     stack.emplace_back(variants[nextPosition], nextPosition);
             } else
