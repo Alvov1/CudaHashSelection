@@ -73,9 +73,8 @@ namespace HashSelection {
         const unsigned threadNumber = threadIdx.x + blockIdx.x * blockDim.x;
         if (threadNumber > 127) return;
 
-        ExtensionList &currentList = extensionsTotal[threadNumber];
 
-        [&currentList](const Word &forWord) {
+        [](const Word &forWord) {
             const auto &[pattern, patternSize] = forWord;
 
             struct Stack final {
@@ -117,38 +116,38 @@ namespace HashSelection {
                 DEVICE bool empty() const { return position == 0; }
             } stack;
 
-            unsigned position = 0;
+            unsigned wordPosition = 0;
 
-            for (; !isVowelDevice(pattern[position]) && position < patternSize; ++position)
-                stack.push(pattern[position], 1, 1);
+            for (; !isVowelDevice(pattern[wordPosition]) && wordPosition < patternSize; ++wordPosition)
+                stack.push(pattern[wordPosition], 1, 1);
 
             do {
-                if (position < patternSize) {
+                if (wordPosition < patternSize) {
                     /* Count the number of repetition vowels. */
                     uint8_t vowelsCount = 1;
-                    for (unsigned i = position + 1; isVowelDevice(pattern[i]) && pattern[i] == pattern[position]; ++vowelsCount, ++i);
+                    for (unsigned i = wordPosition + 1; isVowelDevice(pattern[i]) && pattern[i] == pattern[wordPosition]; ++vowelsCount, ++i);
 
                     /* Pushing new value in stack */
                     stack.push(
-                            pattern[position],
+                            pattern[wordPosition],
                             vowelsCount,
-                            (isVowelDevice(pattern[position]) && vowelsCount == 1) ? static_cast<uint8_t>(2)
-                                                                             : vowelsCount
+                            (isVowelDevice(pattern[wordPosition]) && vowelsCount == 1) ? static_cast<uint8_t>(2)
+                                                                                       : vowelsCount
                     );
-                    position += vowelsCount;
+                    wordPosition += vowelsCount;
                 } else {
-                    /* Found new forWord. Pushing into buffer. */
+                    /* Found new word. Pushing into buffer. */
                     currentList.push(stack.toWord());
 
                     Stack::StackElem current{};
                     do {
                         current = stack.pop();
-                        position -= current.reps;
+                        wordPosition -= current.reps;
                     } while (!stack.empty() && current.repsNow < 2);
 
                     if (current.repsNow-- > 1)
                         stack.push(current.sym, current.reps, current.repsNow);
-                    position += current.reps;
+                    wordPosition += current.reps;
                 }
             } while (!stack.empty());
 
@@ -156,10 +155,10 @@ namespace HashSelection {
     }
 
     std::optional <Word> runDevice(const std::vector <Word> &words, const Hash::HostSHA256 &hash) {
-        const thrust::device_vector<HashSelection::ExtensionList> deviceExtensions = [] (const std::vector<Word>& words) {
+        const thrust::device_vector<HashSelection::Word> deviceExtensions = [] (const std::vector<Word>& words) {
             const thrust::device_vector <HashSelection::Word> deviceWords = words;
-            thrust::device_vector <HashSelection::ExtensionList> deviceExtensions(words.size());
-            Time::cout << "Dicionary loaded onto device and space for extensions is allocated." << Time::endl;
+            thrust::device_vector <HashSelection::Word> deviceExtensions(words.size() * 8);
+            Time::cout << "Dictionary loaded onto device and space for extensions is allocated." << Time::endl;
 
             foundExtensionsDevice<<<8, 16>>>(
                     thrust::raw_pointer_cast(deviceWords.data()),             /* Words dictionary. */

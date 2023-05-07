@@ -22,22 +22,6 @@ namespace HashSelection {
         unsigned size {};
     };
 
-    static constexpr auto ExtensionBound = 64;
-    struct ExtensionList final {
-        Word list[ExtensionBound] {};
-        uint8_t foundExtensions {};
-        DEVICE uint8_t push(const Word& word) {
-            if(foundExtensions + 1 < ExtensionBound)
-                list[foundExtensions] = word;
-            return ++foundExtensions;
-        }
-        DEVICE const Word& top() const {
-            if(foundExtensions > 0)
-                return list[foundExtensions - 1];
-            return list[0];
-        }
-    };
-
     /* Reads input dictionary into host array. */
     std::vector<Word> readFileDictionary(const std::filesystem::path& fromLocation);
 }

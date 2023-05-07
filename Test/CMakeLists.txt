@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(HashSelection)
+project(HashSelection CUDA)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -19,4 +19,4 @@ endif()
 
 add_subdirectory(../Hash Hash)
 
-set_target_properties(HashSelection PROPERTIES LINKER_LANGUAGE CXX)
+set_target_properties(HashSelection PROPERTIES LINKER_LANGUAGE CUDA)
