@@ -8,21 +8,22 @@
 #include <thrust/device_malloc.h>
 #include <thrust/device_vector.h>
 
-#include "Word.h"
 #include "Utility.h"
 #include "TimeLogger.h"
 #include "HostHash.h"
 #include "DeviceHash.h"
 
+#define HOST __host__
 #define DEVICE __device__
 #define GLOBAL __global__
 
 namespace HashSelection {
-    GLOBAL void foundPermutationsDevice(const ExtensionList* words, const unsigned char *withHash, Word* resultPlace);
+    GLOBAL void foundPermutationsDevice(const Word* words, const unsigned* wordsCount, const unsigned char* withHash, Word* resultPlace);
 
-    GLOBAL void foundExtensionsDevice(const Word* data);
+    GLOBAL void foundExtensionsDevice(const Word* data, const unsigned* wordsCount,
+                                      Word* extensions, const unsigned* extensionsCount);
 
-    std::optional<Word> runDevice(const std::vector<Word>& words, const Hash::HostSHA256& forHash);
+    std::unique_ptr<Word> runDevice(const std::vector<Word>& words, const Hash::HostSHA256& forHash);
 }
 
 #endif //HASHSELECTION_HASHSELECTIONDEVICE_H

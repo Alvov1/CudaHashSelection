@@ -4,7 +4,7 @@
 #include <iostream>
 #include <chrono>
 
-#include "Word.h"
+#include "Utility.h"
 
 namespace Time {
     inline struct Endl {} endl;
@@ -26,12 +26,12 @@ namespace HashSelection {
         const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - begin).count();
         if constexpr (std::is_same<Char, char>::value) {
             if(newLine) {
-                std::cout << '[' << duration << " ms ] " << msg;
+                std::cout << '[' << duration << " ms] " << msg;
                 newLine = false;
             } else std::cout << msg;
         } else {
             if(newLine) {
-                std::wcout << L'[' << duration << L" ms ] " << msg;
+                std::wcout << L'[' << duration << L" ms] " << msg;
                 newLine = false;
             } else std::wcout << msg;
         }

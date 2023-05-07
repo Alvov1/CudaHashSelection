@@ -55,9 +55,9 @@ namespace HashSelection {
         /* 3. Get random word permutation. */
         [&word] {
             std::uniform_int_distribution<unsigned> dist(0, 1);
-            for(unsigned i = 0; i < word.size; ++i)
-                for(const auto ch: getVariantsHost(word.data[i]))
-                    if(dist(device)) word.data[i] = ch;
+            for(unsigned i = 0; i < word.second; ++i)
+                for(unsigned j = 0; j < getVariants(word.first[i]).size; ++j)
+                    if(dist(device)) word.first[i] = getVariants(word.first[i])[j];
         } ();
 
         return word;
@@ -72,7 +72,7 @@ namespace HashSelection {
             uint8_t position = 0;
             for(uint8_t i = 0; i < size; ++i) {
                 uint8_t vowelsCount = 1;
-                for (unsigned i = position + 1; isVowelDevice(pattern[i]) && pattern[i] == pattern[position]; ++vowelsCount, ++i);
+                for (unsigned i = position + 1; isVowel(data[i]) && data[i] == data[position]; ++vowelsCount, ++i);
 
             }
 
@@ -90,53 +90,9 @@ namespace HashSelection {
         return totalCount;
     }
 
-    const std::basic_string_view<Char>& getVariantsHost(Char sym) {
-        static constexpr std::array variants = [] {
-            if constexpr (std::is_same<Char, char>::value)
-                return std::array<const std::string_view, 26> {
-                        /* A */ "4@^",     /* B */ "86",      /* C */ "[<(",     /* D */ "",        /* E */ "3&",
-                        /* F */ "v",       /* G */ "6&9",     /* H */ "#",       /* I */ "1|/\\!",  /* J */ "]}",
-                        /* K */ "(<x",     /* L */ "!127|",   /* M */ "",        /* N */ "^",       /* O */ "0",
-                        /* P */ "9?",      /* Q */ "20&9",    /* R */ "972",     /* S */ "3$z2",    /* T */ "7+",
-                        /* U */ "v",       /* V */ "u",       /* W */ "v",       /* X */ "%",       /* Y */ "j",
-                        /* Z */ "27s"
-                };
-            else
-                return std::array<std::wstring_view, 26> {
-                        /* A */ L"4@^",     /* B */ L"86",      /* C */ L"[<(",     /* D */ L"",        /* E */
-                                L"3&",
-                        /* F */ L"v",       /* G */ L"6&9",     /* H */ L"#",       /* I */ L"1|/\\!",  /* J */
-                                L"]}",
-                        /* K */ L"(<x",     /* L */ L"!127|",   /* M */ L"",        /* N */ L"^",       /* O */
-                                L"0",
-                        /* P */ L"9?",      /* Q */ L"20&9",    /* R */ L"972",     /* S */ L"3$z2",    /* T */
-                                L"7+",
-                        /* U */ L"v",       /* V */ L"u",       /* W */ L"v",       /* X */ L"%",       /* Y */
-                                L"j",
-                        /* Z */ L"27s"
-                };
-        } ();
-        static constexpr std::basic_string_view<Char> empty = [] {
-            if constexpr (std::is_same<Char, char>::value)
-                return std::string_view { "" };
-            else return std::wstring_view { L"" };
-        } ();
-        static constexpr auto azAZ = [] {
-            if constexpr (std::is_same<Char, char>::value)
-                return std::tuple { 'a', 'z', 'A', 'Z' };
-            else return std::tuple { L'a', L'z', L'A', L'Z' };
-        } (); const auto& [a, z, A, Z] = azAZ;
-
-        if(a <= sym && sym <= z)
-            return variants[sym - a];
-        if(A <= sym && sym <= Z)
-            return variants[sym - A];
-        return empty;
-    }
-
-    DEVICE const MyStringView& getVariantsDevice(Char sym) {
+    HOST DEVICE const MyStringView& getVariants(Char sym) {
         if constexpr (std::is_same<Char, char>::value) {
-            static constexpr DeviceStringView variants[] = {
+            static constexpr MyStringView variants[] = {
                     /* A */ "4@^",     /* B */ "86",      /* C */ "[<(",     /* D */ "",        /* E */ "3&",
                     /* F */ "v",       /* G */ "6&9",     /* H */ "#",       /* I */ "1|/\\!",  /* J */ "]}",
                     /* K */ "(<x",     /* L */ "!127|",   /* M */ "",        /* N */ "^",       /* O */ "0",
@@ -164,5 +120,12 @@ namespace HashSelection {
 //                return variants[sym - L'A'];
 //            return variants[26];
         }
+    }
+
+    HOST DEVICE bool isVowel(Char sym) {
+        if constexpr (std::is_same<Char, char>::value)
+            return (sym == 'a' || sym == 'e' || sym == 'i' || sym == 'o' || sym == 'u' || sym == 'y');
+        else
+            return (sym == L'a' || sym == L'e' || sym == L'i' || sym == L'o' || sym == L'u' || sym == L'y');
     }
 }

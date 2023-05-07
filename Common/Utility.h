@@ -7,7 +7,10 @@
 #include <string>
 #include <array>
 #include <random>
+
 #include <thrust/pair.h>
+#include <thrust/device_ptr.h>
+#include <thrust/device_vector.h>
 
 #define HOST __host__
 #define GLOBAL __global__
@@ -19,7 +22,7 @@ namespace HashSelection {
 
     /* Checking passwords up to 31-character long and storing them as pairs of (Data, Size). */
     static constexpr auto WordSize = 32;
-    using Word = thrust::pair<Char[WordSize], uint8_t>;
+    using Word = thrust::pair<Char[WordSize], unsigned>;
 
     /* Reads input dictionary into host array. */
     std::vector<Word> readFileDictionary(const std::filesystem::path& fromLocation);
@@ -31,18 +34,13 @@ namespace HashSelection {
     unsigned long long countComplexity(const std::vector<Word>& words);
 
     /* Check vowels */
-    HOST DEVICE bool isVowel(Char sym) {
-        if constexpr (std::is_same<Char, char>::value)
-            return (sym == 'a' || sym == 'e' || sym == 'i' || sym == 'o' || sym == 'u' || sym == 'y');
-        else
-            return (sym == L'a' || sym == L'e' || sym == L'i' || sym == L'o' || sym == L'u' || sym == L'y');
-    };
+    HOST DEVICE bool isVowel(Char sym);;
 
     struct MyStringView final {
         const Char* data {};
         std::size_t size {};
-        HOST DEVICE constexpr DeviceStringView() {}
-        HOST DEVICE constexpr DeviceStringView(const Char* dataPtr): data(dataPtr) {
+        HOST DEVICE constexpr MyStringView() {}
+        HOST DEVICE constexpr MyStringView(const Char* dataPtr): data(dataPtr) {
             for(size = 0; dataPtr[size] != 0; ++size);
         };
         HOST DEVICE constexpr Char operator[](std::size_t index) const {
@@ -56,7 +54,7 @@ namespace HashSelection {
     class MyStack final {
         StackElem buffer[buffSize];
         uint8_t position{};
-
+    public:
         HOST DEVICE uint8_t push(const StackElem& elem) {
             if (position + 1 < buffSize)
                 buffer[position] = elem;
@@ -75,13 +73,6 @@ namespace HashSelection {
         HOST DEVICE bool empty() const { return position == 0; }
         HOST DEVICE uint8_t size() const { return position; };
         HOST DEVICE StackElem* get() const { return buffer; };
-
-        HOST DEVICE Word toWord() const {
-            Word result {}; auto& [data, size] = result;
-            for (uint8_t i = 0; i < position; ++i)
-                data[size++] = buffer[i].sym;
-            return result;
-        }
     };
 }
 
