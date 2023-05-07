@@ -8,11 +8,11 @@ namespace HashSelection {
         return (sym == L'a' || sym == L'e' || sym == L'i' || sym == L'o' || sym == L'u' || sym == L'y');
     }
 
-    GLOBAL void foundPermutationsDevice(const Word *forWord, const unsigned char *withHash) {
+    GLOBAL void foundPermutationsDevice(const ExtensionList* words, const unsigned char *withHash, Word* resultPlace) {
         const unsigned threadNumber = threadIdx.x + blockIdx.x * blockDim.x;
         if (threadNumber > 127) return;
 
-        const auto &[pattern, patternSize] = forWord[threadNumber];
+        const auto &[pattern, patternSize] = words[threadNumber];
 
         struct Stack final {
             struct StackElem final {
@@ -61,7 +61,7 @@ namespace HashSelection {
         }
     }
 
-    GLOBAL void foundExtensionsDevice(const Word *data, ExtensionList *extensionsTotal) {
+    GLOBAL void foundExtensionsDevice(const Word* words, ExtensionList *extensionsTotal) {
         const unsigned threadNumber = threadIdx.x + blockIdx.x * blockDim.x;
         if (threadNumber > 127) return;
 
@@ -145,36 +145,44 @@ namespace HashSelection {
                 }
             } while (!stack.empty());
 
-        }(data[threadNumber]);
-    }
-
-    GLOBAL void test() {
-        const unsigned threadNumber = threadIdx.x + blockIdx.x * blockDim.x;
-        if(threadNumber > 0) return;
-
-        Hash::DeviceSHA256 hash("hello", 5);
-        printf("{ ");
-        for(uint8_t i = 0; i < 32; ++i)
-            printf("%d, ", hash.get()[i]);
-        printf("}\n");
+        }(words[threadNumber]);
     }
 
     std::optional <Word> runDevice(const std::vector <Word> &words, const Hash::HostSHA256 &hash) {
-        /* Copy data dictionary and required hash from host to device. */
-        const thrust::device_vector <HashSelection::Word> deviceWords = words;
-        thrust::device_vector <HashSelection::ExtensionList> deviceExtensions(words.size());
-        Time::cout << "Device memory allocated." << Time::endl;
+        const thrust::device_vector<HashSelection::ExtensionList> deviceExtensions = [] (const std::vector<Word>& words) {
+            const thrust::device_vector <HashSelection::Word> deviceWords = words;
+            thrust::device_vector <HashSelection::ExtensionList> deviceExtensions(words.size());
+            Time::cout << "Dicionary loaded onto device and space for extensions is allocated." << Time::endl;
 
-        /* Start process with global function. */
-        foundExtensionsDevice<<<8, 16>>>(
-                thrust::raw_pointer_cast(deviceWords.data()),
-                        thrust::raw_pointer_cast(deviceExtensions.data()));
-        if (cudaDeviceSynchronize() != cudaSuccess)
-            throw std::runtime_error("Failed.");
+            foundExtensionsDevice<<<8, 16>>>(
+                    thrust::raw_pointer_cast(deviceWords.data()),
+                    thrust::raw_pointer_cast(deviceExtensions.data()));
+            if (cudaSuccess != cudaDeviceSynchronize())
+                throw std::runtime_error("Founding extensions failed.");
 
-//        const thrust::device_vector<unsigned char> deviceHash =
-//                std::vector<unsigned char>(hash.get().begin(), hash.get().end());
-//        const thrust::device_ptr<Word> resultPlace = thrust::device_malloc<Word>(1);
+            return deviceExtensions;
+        } (words);
+
+        Time::cout << "Word extensions found and loaded." << Time::endl;
+
+        const thrust::host_vector<Word> result = [&hash] (const thrust::device_vector<ExtensionList>& deviceExtensions) {
+            const thrust::device_vector<unsigned char> deviceHashPattern = [&hash] {
+                const auto &data = hash.get();
+                return std::vector<unsigned char>(data.begin(), data.end());
+            }();
+            thrust::device_vector<Word> deviceResult(1);
+
+            foundPermutationsDevice<<<8, 16>>>(
+                    thrust::raw_pointer_cast(deviceExtensions.data()),
+                    thrust::raw_pointer_cast(deviceHashPattern.data()));
+            if (cudaSuccess != cudaDeviceSynchronize())
+                throw std::runtime_error("Founding permutations failed.");
+
+            return deviceResult;
+        } (deviceExtensions);
+
+        if(result[0].size > 0) Time::cout << "Completed: " << result[0] << Time::endl;
+            else Time::cout << "Failed." << Time::endl;
 
         return {};
     }

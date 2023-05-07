@@ -1,8 +1,10 @@
 #ifndef HASHSELECTION_HASHSELECTIONDEVICE_H
 #define HASHSELECTION_HASHSELECTIONDEVICE_H
 
+#include <vector>
 #include <optional>
 #include <thrust/device_ptr.h>
+#include <thrust/host_vector.h>
 #include <thrust/device_malloc.h>
 #include <thrust/device_vector.h>
 
@@ -18,7 +20,7 @@
 namespace HashSelection {
     DEVICE bool isVowelDevice(Char sym);
 
-    GLOBAL void foundPermutationsDevice(const Word* forWord, const unsigned char* withHash);
+    GLOBAL void foundPermutationsDevice(const ExtensionList* words, const unsigned char* withHash);
 
     GLOBAL void foundExtensionsDevice(const Word* data);
 
