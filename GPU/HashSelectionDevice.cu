@@ -1,4 +1,4 @@
-#include "HashSelection.h"
+#include "HashSelectionDevice.h"
 
 namespace HashSelection {
     DEVICE bool isVowelDevice(Char sym) {
@@ -148,7 +148,18 @@ namespace HashSelection {
         }(data[threadNumber]);
     }
 
-    std::optional <Word> runDevice(const std::vector <Word> &words, const HostSHA256 &hash) {
+    GLOBAL void test() {
+        const unsigned threadNumber = threadIdx.x + blockIdx.x * blockDim.x;
+        if(threadNumber > 0) return;
+
+        Hash::DeviceSHA256 hash("hello", 5);
+        printf("{ ");
+        for(uint8_t i = 0; i < 32; ++i)
+            printf("%d, ", hash.get()[i]);
+        printf("}\n");
+    }
+
+    std::optional <Word> runDevice(const std::vector <Word> &words, const Hash::HostSHA256 &hash) {
         /* Copy data dictionary and required hash from host to device. */
         const thrust::device_vector <HashSelection::Word> deviceWords = words;
         thrust::device_vector <HashSelection::ExtensionList> deviceExtensions(words.size());

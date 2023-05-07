@@ -1,5 +1,5 @@
-#ifndef HASHSELECTION_HASHSELECTION_H
-#define HASHSELECTION_HASHSELECTION_H
+#ifndef HASHSELECTION_HASHSELECTIONDEVICE_H
+#define HASHSELECTION_HASHSELECTIONDEVICE_H
 
 #include <optional>
 #include <thrust/device_ptr.h>
@@ -7,8 +7,10 @@
 #include <thrust/device_vector.h>
 
 #include "Word.h"
-#include "HostHash.h"
 #include "TimeLogger.h"
+
+#include "HostHash.h"
+#include "DeviceHash.h"
 
 #define DEVICE __device__
 #define GLOBAL __global__
@@ -21,7 +23,9 @@ namespace HashSelection {
     GLOBAL void foundExtensionsDevice(const Word* data);
 
     /* Makes all stages all-together on DEVICE. */
-    std::optional<Word> runDevice(const std::vector<Word>& words, const HostSHA256& forHash);
+    std::optional<Word> runDevice(const std::vector<Word>& words, const Hash::HostSHA256& forHash);
+
+    GLOBAL void test();
 }
 
-#endif //HASHSELECTION_HASHSELECTION_H
+#endif //HASHSELECTION_HASHSELECTIONDEVICE_H

@@ -2,7 +2,7 @@
 #define HASHSELECTION_HASHSELECTION_H_H
 
 #include "Word.h"
-#include "../CPU/HashSelection.h"
+#include "HashSelectionHost.h"
 
 namespace HashSelection {
     /* Get random mutation for random word from the list. */

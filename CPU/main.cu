@@ -2,8 +2,8 @@
 
 #include "HostHash.h"
 #include "TimeLogger.h"
-#include "HashSelection.h"
-#include "../Common/Utility.h"
+#include "HashSelectionHost.h"
+#include "Utility.h"
 
 int main() {
     const std::filesystem::path dictionaryLocation("../../Dictionaries/128.txt");

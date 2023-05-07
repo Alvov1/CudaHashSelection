@@ -1,4 +1,4 @@
-#include "HashSelection.h"
+#include "HashSelectionHost.h"
 #include "TimeLogger.h"
 
 namespace HashSelection {
