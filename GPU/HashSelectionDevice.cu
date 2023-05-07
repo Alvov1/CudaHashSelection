@@ -7,40 +7,17 @@ namespace HashSelection {
 
         const auto &[extensions, foundExtensions] = words[threadNumber];
 
-        struct Stack final {
-            struct StackElem final {
-                Char sym{};
-                short amount{};
-            } buffer[WordSize];
-            uint8_t position{};
-            DEVICE uint8_t push(Char sym, short amount) {
-                if (position + 1 < WordSize)
-                    buffer[position] = {sym, amount};
-                return ++position;
-            }
-            DEVICE StackElem pop() {
-                if (position > 0)
-                    return buffer[--position];
-                return buffer[0];
-            }
-            DEVICE Word toWord() const {
-                Word result{};
-                for (uint8_t i = 0; i < position; ++i)
-                    result.data[result.size++] = buffer[i].sym;
-                return result;
-            }
-            DEVICE bool empty() const { return position == 0; }
-        } stack;
+        MyStack<thrust::pair<Char, uint8_t>> stack {};
 
         for(unsigned i = 0; i < foundExtensions; ++i) {
             const auto& [pattern, patternSize] = extensions[i];
 
-            stack.push(pattern[0], -1);
+            stack.push({ pattern[0], -1 });
 
             while (!stack.empty()) {
-                if (stack.position >= patternSize) {
+                if (stack.size() >= patternSize) {
                     const bool found = [&withHash] (const Word &word) {
-                        Hash::DeviceSHA256 hash(word.data, word.size * sizeof(Char));
+                        Hash::DeviceSHA256 hash(word.fisrt, word.second * sizeof(Char));
                         for(unsigned i = 0; i < 32; ++i)
                             if(withHash[i] != hash.get()[i]) return false;
 
@@ -49,10 +26,10 @@ namespace HashSelection {
                     } (stack.toWord());
                     if(found) return;
 
-                    Stack::StackElem current {};
+                    thrust::pair<Char, uint8_t> current {};
                     do {
                         current = stack.pop();
-                        const auto& variants = getVariantsDevice(pattern[stack.position]);
+                        const auto& variants = getVariants(pattern[stack.position]);
                         if(current.amount + 1 < variants.size) break;
                     } while (!stack.empty());
 
