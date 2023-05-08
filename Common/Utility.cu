@@ -53,8 +53,8 @@ namespace HashSelection {
                 uint8_t vowelsCount = 1;
                 for (unsigned j = i + 1; isVowel(data[j]) && data[j] == data[i]; ++vowelsCount, ++j);
 
-                std::uniform_int_distribution<uint8_t> dist(1, (vowelsCount == 1 && isVowel(data[i])) ? 2 : vowelsCount);
-                for(uint8_t j = 0; j < dist(device); ++j) nData[nSize++] = data[i];
+                std::uniform_int_distribution<unsigned> dist(1, (vowelsCount == 1 && isVowel(data[i])) ? 2 : vowelsCount);
+                for(unsigned j = 0; j < dist(device); ++j) nData[nSize++] = data[i];
 
                 i += vowelsCount - 1;
             }
@@ -66,7 +66,10 @@ namespace HashSelection {
             std::uniform_int_distribution<unsigned> dist(0, 1);
             for(unsigned i = 0; i < extendedWord.second; ++i)
                 for(unsigned j = 0; j < getVariants(extendedWord.first[i]).size; ++j)
-                    if(dist(device)) extendedWord.first[i] = getVariants(extendedWord.first[i])[j];
+                    if(dist(device)) {
+                        extendedWord.first[i] = getVariants(extendedWord.first[i])[j];
+                        break;
+                    }
         } ();
 
         return extendedWord;

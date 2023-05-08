@@ -7,8 +7,6 @@
 #include <string>
 #include <array>
 #include <random>
-
-#ifdef CUDA
 #include <thrust/pair.h>
 #include <thrust/device_ptr.h>
 #include <thrust/device_vector.h>
@@ -16,13 +14,6 @@
 #define HOST __host__
 #define GLOBAL __global__
 #define DEVICE __device__
-#else
-#define thrust std
-#define HOST
-#define DEVICE
-#define GLOBAL
-#endif
-
 
 namespace HashSelection {
 

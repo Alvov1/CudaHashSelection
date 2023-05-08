@@ -8,7 +8,7 @@
 int main() {
     const std::filesystem::path dictionaryLocation("../../Dictionaries/128.txt");
     const auto words = HashSelection::readFileDictionary(dictionaryLocation);
-    Time::cout << "Loaded dictionary. Complexity: " << HashSelection::countComplexity(words, true) << Time::endl;
+    Time::cout << "Loaded dictionary. Complexity: " << HashSelection::countComplexity(words, false) << Time::endl;
 
     const HashSelection::Word mutation = HashSelection::getRandomModification(words);
     HashSelection::Closure closure = [&mutation] (const HashSelection::Word& forWord) {

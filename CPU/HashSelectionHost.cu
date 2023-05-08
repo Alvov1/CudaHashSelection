@@ -22,7 +22,7 @@ namespace HashSelection {
                 extensionsStack.push({
                     initPattern[wordPosition],
                     vowelsCount,
-                    (isVowel(initPattern[wordPosition]) && vowelsCount == 1) ? 2 : vowelsCount
+                    (isVowel(initPattern[wordPosition]) && vowelsCount == 1) ? uint8_t(2) : vowelsCount
                 });
                 wordPosition += vowelsCount;
 
