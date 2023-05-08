@@ -49,7 +49,6 @@ namespace HashSelection {
                                 return word;
                             } (stack);
                             if(onClosure(permutation)) return std::optional {permutation };
-//                                else Time::cout << "\t\tPermutation " << permutation << " completed." << Time::endl;
 
                             thrust::pair<Char, int8_t> current {}; auto& [sym, varPos] = current;
                             do {
@@ -68,7 +67,6 @@ namespace HashSelection {
                     return std::optional<Word> {};
                 } (extension, permutationsStack);
                 if(value.has_value()) return value;
-//                    else Time::cout << "\tExtension " << extension << " completed." << Time::endl;
 
                 /* Popping values from the stack until it's empty or another vowel is found. */
                 thrust::tuple<Char, uint8_t, uint8_t> current {};
