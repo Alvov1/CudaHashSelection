@@ -45,45 +45,54 @@ namespace HashSelection {
         } ();
 
         /* 2. Get random word extension. */
-        word = [&word] {
-//            const auto extensions = foundExtensionsHost(word);
-//            std::uniform_int_distribution<unsigned> dist(0, extensions.size() - 1);
-//            return extensions[dist(device)];
-            return word;
-        } ();
+        Word extendedWord = [] (const Word& forWord) {
+            const auto& [data, size] = forWord;
+
+            Word newWord {}; auto& [nData, nSize] = newWord;
+            for(unsigned i = 0; i < size; ++i) {
+                uint8_t vowelsCount = 1;
+                for (unsigned j = i + 1; isVowel(data[j]) && data[j] == data[i]; ++vowelsCount, ++j);
+
+                std::uniform_int_distribution<uint8_t> dist(1, (vowelsCount == 1 && isVowel(data[i])) ? 2 : vowelsCount);
+                for(uint8_t j = 0; j < dist(device); ++j) nData[nSize++] = data[i];
+
+                i += vowelsCount - 1;
+            }
+            return newWord;
+        } (word);
 
         /* 3. Get random word permutation. */
-        [&word] {
+        [&extendedWord] {
             std::uniform_int_distribution<unsigned> dist(0, 1);
-            for(unsigned i = 0; i < word.second; ++i)
-                for(unsigned j = 0; j < getVariants(word.first[i]).size; ++j)
-                    if(dist(device)) word.first[i] = getVariants(word.first[i])[j];
+            for(unsigned i = 0; i < extendedWord.second; ++i)
+                for(unsigned j = 0; j < getVariants(extendedWord.first[i]).size; ++j)
+                    if(dist(device)) extendedWord.first[i] = getVariants(extendedWord.first[i])[j];
         } ();
 
-        return word;
+        return extendedWord;
     }
 
-    unsigned long long countComplexity(const std::vector<Word>& words) {
+    unsigned long long countComplexity(const std::vector<Word>& words, bool verbose) {
         unsigned long long totalCount = 0;
 
         for(const auto& [data, size]: words) {
-            unsigned long long wordCount = 0;
+            unsigned long long wordCount = 1;
 
-            uint8_t position = 0;
             for(uint8_t i = 0; i < size; ++i) {
                 uint8_t vowelsCount = 1;
-                for (unsigned i = position + 1; isVowel(data[i]) && data[i] == data[position]; ++vowelsCount, ++i);
+                for(uint8_t j = i + 1; isVowel(data[j]) && data[j] == data[i]; ++vowelsCount, ++j);
+                if(vowelsCount == 1 && isVowel(data[i])) ++vowelsCount;
 
+                const auto& variants = getVariants(data[i]);
+                for(uint8_t j = 0; j < vowelsCount; ++j)
+                    wordCount *= (variants.size > 0) ? variants.size : 1;
+
+                i += vowelsCount - 1;
             }
 
-//            for(const auto& [data, size]: foundExtensionsHost(word)) {
-//                unsigned long long extendedWordCount = 1;
-//                for (unsigned i = 0; i < size; ++i) {
-//                    const auto variantsSize = getVariants(data[i]).size();
-//                    extendedWordCount *= (variantsSize > 0 ? variantsSize : 1);
-//                }
-//                wordCount += extendedWordCount;
-//            }
+            if(verbose)
+                std::cout << "Word " << data << " - " << wordCount << " combinations." << std::endl;
+
             totalCount += wordCount;
         }
 

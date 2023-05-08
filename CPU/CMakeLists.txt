@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
-project(HashSelection CUDA)
+#project(HashSelection CUDA)
+project(HashSelection)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -21,6 +22,8 @@ else()
     message(STATUS "OpenSSL Not Found")
 endif()
 
-set_target_properties(HashSelection PROPERTIES LINKER_LANGUAGE CUDA)
+#set_target_properties(HashSelection PROPERTIES LINKER_LANGUAGE CUDA)
+set_target_properties(HashSelection PROPERTIES LINKER_LANGUAGE CXX)
+
 set_target_properties(HashSelection PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 set_property(TARGET HashSelection PROPERTY CUDA_ARCHITECTURES OFF)

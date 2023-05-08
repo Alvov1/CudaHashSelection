@@ -8,6 +8,7 @@
 #include <array>
 #include <random>
 
+#ifdef CUDA
 #include <thrust/pair.h>
 #include <thrust/device_ptr.h>
 #include <thrust/device_vector.h>
@@ -15,8 +16,16 @@
 #define HOST __host__
 #define GLOBAL __global__
 #define DEVICE __device__
+#else
+#define thrust std
+#define HOST
+#define DEVICE
+#define GLOBAL
+#endif
+
 
 namespace HashSelection {
+
     /* Using ASCII/UTF letters. */
     using Char = char;
 
@@ -31,10 +40,10 @@ namespace HashSelection {
     Word getRandomModification(const std::vector<Word>& fromWords);
 
     /* Count total amount of mutations for all words. */
-    unsigned long long countComplexity(const std::vector<Word>& words);
+    unsigned long long countComplexity(const std::vector<Word>& words, bool verbose = false);
 
     /* Check vowels */
-    HOST DEVICE bool isVowel(Char sym);;
+    HOST DEVICE bool isVowel(Char sym);
 
     struct MyStringView final {
         const Char* data {};
@@ -70,6 +79,11 @@ namespace HashSelection {
             if(index < position) return buffer[index];
             return buffer[0];
         }
+        HOST DEVICE const StackElem& operator[] (std::size_t index) const {
+            if(index < position) return buffer[index];
+            return buffer[0];
+        }
+
         HOST DEVICE bool empty() const { return position == 0; }
         HOST DEVICE uint8_t size() const { return position; };
         HOST DEVICE StackElem* get() const { return buffer; };

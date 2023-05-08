@@ -6,7 +6,11 @@
 #include <iomanip>
 #include <array>
 
+#ifdef CUDA
 #define DEVICE __device__
+#else
+#define DEVICE
+#endif
 
 namespace Hash {
     using u64 = uint64_t;
