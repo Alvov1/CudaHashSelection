@@ -18,9 +18,7 @@ int main() {
         return hash;
     } ();
 
-    const auto value = HashSelection::runDevice(words, hash);
-    if(value != nullptr) Time::cout << "Completed: " << *value << Time::endl;
-        else Time::cout << "Not found." << Time::endl;
+    HashSelection::runDevice(words, hash);
 
     return 0;
 }

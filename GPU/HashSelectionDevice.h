@@ -20,10 +20,7 @@
 namespace HashSelection {
     GLOBAL void foundPermutationsDevice(const Word* words, const unsigned* wordsCount, const unsigned char* withHash, Word* resultPlace);
 
-    GLOBAL void foundExtensionsDevice(const Word* data, const unsigned* wordsCount,
-                                      Word* extensions, const unsigned* extensionsCount);
-
-    std::unique_ptr<Word> runDevice(const std::vector<Word>& words, const Hash::HostSHA256& forHash);
+    void runDevice(const std::vector<Word>& words, const Hash::HostSHA256& forHash);
 }
 
 #endif //HASHSELECTION_HASHSELECTIONDEVICE_H

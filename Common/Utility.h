@@ -73,6 +73,7 @@ namespace HashSelection {
         HOST DEVICE bool empty() const { return position == 0; }
         HOST DEVICE uint8_t size() const { return position; };
         HOST DEVICE StackElem* get() const { return buffer; };
+        HOST DEVICE void clear() { position = 0; }
     };
 }
 
