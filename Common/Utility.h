@@ -36,19 +36,24 @@ namespace HashSelection {
     /* Check vowels */
     HOST DEVICE bool isVowel(Char sym);
 
+    template <typename tChar>
     struct MyStringView final {
-        const Char* data {};
+        const tChar* data {};
         std::size_t size {};
         HOST DEVICE constexpr MyStringView() {}
-        HOST DEVICE constexpr MyStringView(const Char* dataPtr): data(dataPtr) {
+        HOST DEVICE constexpr MyStringView(const tChar* dataPtr): data(dataPtr) {
             for(size = 0; dataPtr[size] != 0; ++size);
         };
         HOST DEVICE constexpr Char operator[](std::size_t index) const {
             if(index < size) return data[index];
-            return Char();
+            return tChar();
         }
     };
-    HOST DEVICE const MyStringView& getVariants(Char forSym);
+
+    template <typename tChar>
+    HOST DEVICE const MyStringView<tChar>& getVariants(tChar forSym);
+    template<> HOST DEVICE const MyStringView<char>& getVariants(char sym);
+    template <> HOST DEVICE const MyStringView<wchar_t>& getVariants(wchar_t sym);
 
     template <typename StackElem, std::size_t buffSize = WordSize>
     class MyStack final {

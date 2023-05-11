@@ -1,7 +1,7 @@
 #include "HashSelectionHost.h"
 
 namespace HashSelection {
-    std::optional<Word> foundExtensionsHost(const Word& forWord, const Closure& onClosure) {
+    std::optional<Word> backtracking(const Word& forWord, const Closure& onClosure) {
         const auto& [initPattern, initSize] = forWord;
 
         MyStack<thrust::tuple<Char, uint8_t, uint8_t>> extensionsStack {};
@@ -84,11 +84,15 @@ namespace HashSelection {
         return std::optional<Word> {};
     }
 
-    std::optional<Word> run(const std::vector<Word>& words, const Closure& onClosure) {
-        for(const auto& word: words) {
-            const auto value = foundExtensionsHost(word, onClosure);
+    std::optional<Word> process(const std::vector<Word>& words, const Closure& onClosure) {
+        for(unsigned i = 0; i < words.size(); ++i) {
+            const auto value = backtracking(words[i], onClosure);
             if(value.has_value()) return value;
-                else Time::cout << "Word " << word << " completed." << Time::endl;
+//                else Time::cout << "Word " << word << " completed." << Time::endl;
+
+            const auto percent = static_cast<unsigned>(static_cast<double>(i) / static_cast<double>(words.size()) * 100);
+            if(percent > 0 && percent % 5 == 0)
+                Time::cout << "Completed " << percent << "%." << Time::endl;
         }
 
         return std::optional<Word> {};

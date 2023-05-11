@@ -23,7 +23,7 @@ namespace HashSelection {
     GLOBAL void foundExtensionsDevice(const Word* data, const unsigned* wordsCount,
                                       Word* extensions, const unsigned* extensionsCount);
 
-    std::optional<Word> runDevice(const std::vector<Word>& words, const Hash::HostSHA256& forHash);
+    std::optional<Word> process(const std::vector<Word>& words, const Hash::HostSHA256& forHash);
 }
 
 #endif //HASHSELECTION_HASHSELECTIONDEVICE_H

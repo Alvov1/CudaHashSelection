@@ -113,8 +113,6 @@ namespace HashSelection {
                         Word& ourPlace = extensionsTotal[extensionPosition];
                         for(unsigned i = 0; i < word.second; ++i)
                             ourPlace.first[i] = word.first[i];
-
-//                        printf("Found permutation %s. Pushed at position %d\n", word.first, extensionPosition);
                     } ();
 
                     thrust::tuple<Char, uint8_t, uint8_t> current {};
@@ -132,7 +130,7 @@ namespace HashSelection {
         } (words[threadNumber], extensionsTotal, extensionsCount);
     }
 
-    std::optional<Word> runDevice(const std::vector <Word> &words, const Hash::HostSHA256 &hash) {
+    std::optional<Word> process(const std::vector <Word> &words, const Hash::HostSHA256 &hash) {
         static constexpr auto getPower2 = [] (unsigned dimension) {
             unsigned long long value = 2;
             for(uint8_t power = 1; value < static_cast<unsigned>(sqrt(dimension)); value *= 2, ++power);

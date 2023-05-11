@@ -10,7 +10,7 @@
 namespace HashSelection {
     /* Make all stages all-together on HOST. */
     using Closure = std::function<bool(const Word&)>;
-    std::optional<Word> run(const std::vector<Word>& words, const Closure& onClosure);
+    std::optional<Word> process(const std::vector<Word>& words, const Closure& onClosure);
 }
 
 
