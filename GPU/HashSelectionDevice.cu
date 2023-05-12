@@ -22,7 +22,7 @@ namespace HashSelection {
 
         while (!stack.empty()) {
             if(resultPlace->second != 0) {
-//                printf("Thread %d (word %s) exited. (Other thread completed).\n", threadNumber, pattern);
+                printf("Thread %d exited (Other thread completed).\n", threadNumber);
                 return; /* Other thread completed. */
             }
 
@@ -34,17 +34,30 @@ namespace HashSelection {
                     return word;
                 } (stack);
 
+                if(resultPlace->second != 0) {
+                    printf("Thread %d exited (Other thread completed).\n", threadNumber);
+                    return; /* Other thread completed. */
+                }
+
                 const bool found = [&resultPlace] (const Word& word, const unsigned char* required) {
                     Hash::DeviceSHA256 hash(word.first, word.second * sizeof(Char));
                     for(unsigned i = 0; i < 32; ++i)
                         if(required[i] != hash.get()[i]) return false;
 
                     printf("Found coincidence for word: %s (%d)\n", word.first, word.second);
-                    *resultPlace = word; return true;
+
+                    if(atomicAdd(&resultPlace->second, word.second) != 0)
+                        printf("WARNING: Result overwrites other data.");
+                    for(uint8_t i = 0; i < word.second; ++i)
+                        resultPlace->first[i] = word.first[i];
+                    return true;
                 } (permutation, withHash);
                 if(found) return;
 
-                if(resultPlace->second != 0) return;
+                if(resultPlace->second != 0) {
+                    printf("Thread %d exited (Other thread completed).\n", threadNumber);
+                    return; /* Other thread completed. */
+                }
 
                 thrust::pair<Char, int8_t> current {}; auto& [sym, varPos] = current;
                 do {
@@ -150,7 +163,7 @@ namespace HashSelection {
             };
             *values.second = extensionsBorder;
 
-            Time::cout << "Dictionary loaded onto device and space for extensions is allocated." << Time::endl;
+            Time::cout << "Dictionary loaded into GPU and additional space is allocated." << Time::endl;
 
             const auto dimension = getPower2(words.size());
             foundExtensionsDevice<<<dimension, dimension>>>(
@@ -164,7 +177,7 @@ namespace HashSelection {
             return values;
         } (words);
 
-        Time::cout << "Word extensions completed." << Time::endl;
+        Time::cout << "Word extensions stage completed." << Time::endl;
 
         const unsigned dimension = getPower2(words.size() * 8);
         return [&hash, &extensions, &dimension] {

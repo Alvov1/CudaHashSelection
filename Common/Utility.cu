@@ -3,12 +3,12 @@
 namespace HashSelection {
     std::vector<Word> readFileDictionary(const std::filesystem::path& fromLocation) {
         if (!std::filesystem::exists(fromLocation))
-            throw std::invalid_argument("Dictionary file is not found");
-        if (!std::filesystem::is_regular_file(fromLocation))
-            throw std::invalid_argument("Bad dictionary file.");
+            throw std::invalid_argument("Dictionary file is not found at location '" + fromLocation.string() + "'");
 
         return [](const std::filesystem::path& location) {
             std::basic_ifstream<Char> input(location);
+            if(input.fail())
+                throw std::invalid_argument("Failed to open the dictionary file at location '" + location.string() + "'");
 
             unsigned wordsCount = [&input]() {
                 std::basic_string<Char> sizeBuffer(10, Char(0));
@@ -133,6 +133,7 @@ namespace HashSelection {
     }
 
     HOST DEVICE bool isVowel(Char sym) {
+        /* Add 'P', 'G', 'T', 'L' */
         if constexpr (std::is_same<Char, char>::value)
             return (sym == 'a' || sym == 'e' || sym == 'i' || sym == 'o' || sym == 'u' || sym == 'y');
         else

@@ -16,7 +16,6 @@
 #define DEVICE __device__
 
 namespace HashSelection {
-
     /* Using ASCII/UTF letters. */
     using Char = char;
 
